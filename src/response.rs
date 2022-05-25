@@ -38,10 +38,43 @@ impl POP3Response {
 impl TryFrom<Bytes> for POP3Response {
     type Error = POP3ResponseErr;
 
-    fn try_from(_bytes: Bytes) -> Result<Self, Self::Error> {
-        //let m = &bytes.clone().into();
+    fn try_from(bytes: Bytes) -> Result<Self, Self::Error> {
+        use POP3ResponseErr::*;
 
-        Ok(Self::positive("".into()))
+        let msg_start;
+
+        // Parse the response status
+        let status = if bytes.slice(0..3) == "+OK" {
+            msg_start = 4;
+            Positive
+        } else if bytes.slice(0..4) == "-ERR" {
+            msg_start = 5;
+            Negative
+        } else {
+            return Err(InvalidStatus);
+        };
+
+        if bytes.len() == msg_start - 1 {
+            return Ok(Self::new(status, "".into()));
+        }
+
+        // Check that there is a space between the status and the message
+        if let Some(c) = bytes.get(msg_start-1) {
+            if c != &b' ' {
+                return Err(InvalidStatus)
+            }
+        }
+
+        let mut message = bytes.slice(msg_start..);
+        if contains_crlf(&message) {
+            if message.slice(message.len()-5..) == "\r\n.\r\n" {
+                message = message.slice(..message.len()-5); // Remove the terminating sequence from the message
+            } else {
+                return Err(IncompleteResponse);
+            }
+        }
+
+        Ok(Self::new(status, message))
     }
 }
 
@@ -61,16 +94,22 @@ impl From<POP3Response> for Bytes {
         out.extend_from_slice(b" ");
         out.extend_from_slice(&response.message[..]);
 
-        // Check if the message has any CRLF sequences
-        for i in 0..response.message.len() {
-            if response.message.slice(i..i+2) == "\r\n" {
-                // Terminate the multi-line response
-                out.extend_from_slice(b"\r\n.\r\n");
-            }
+        // Check if the message is multiline
+        if contains_crlf(&response.message) {
+            out.extend_from_slice(b"\r\n.\r\n");
         }
 
         out.into()
     }
+}
+
+fn contains_crlf(bytes: &Bytes) -> bool {
+    for i in 0..bytes.len()-1 {
+        if bytes.slice(i..i+2) == "\r\n" {
+            return true;
+        }
+    }
+    false
 }
 
 #[derive(Debug)]
