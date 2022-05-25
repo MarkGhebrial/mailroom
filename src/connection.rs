@@ -3,25 +3,28 @@
 //! from the server.
 
 use tokio::net::{TcpStream};
-use tokio::io::BufWriter;
-use bytes::{Buf, BytesMut};
+use tokio::io::{self, AsyncWriteExt};
+use bytes::{Bytes, BytesMut};
 
-use crate::response::{POP3ResponseStatus, POP3Response};
+use crate::response::{POP3Response};
 
 pub struct POP3Connection {
-    stream: BufWriter<TcpStream>,
+    stream: TcpStream,
     buffer: BytesMut,
 }
 
 impl POP3Connection {
     pub fn new(socket: TcpStream) -> Self {
         Self {
-            stream: BufWriter::new(socket),
+            stream: socket,
             buffer: BytesMut::with_capacity(4096)
         }
     }
 
-    pub async fn send_response(response: POP3Response) -> Result<(), tokio::io::Error> {
+    /// Send a response or greeting to the client
+    pub async fn send_response(&mut self, response: POP3Response) -> Result<(), io::Error> {
+        self.stream.write_all(&Bytes::from(response)[..]).await?;
+
         Ok(())
     }
 }

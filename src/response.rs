@@ -4,6 +4,8 @@ use std::fmt;
 
 use POP3ResponseStatus::*;
 
+/// Represents the possible POP3 server status indicators
+/// 
 /// POP3 servers reply with only two response codes: "+OK" and "-ERR"
 /// The "+OK" code is called the positive status indicator, and the 
 /// "-ERR" code is called the negative status indicator.
