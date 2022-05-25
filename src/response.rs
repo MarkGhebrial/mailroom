@@ -7,6 +7,7 @@ use POP3ResponseStatus::*;
 /// POP3 servers reply with only two response codes: "+OK" and "-ERR"
 /// The "+OK" code is called the positive status indicator, and the 
 /// "-ERR" code is called the negative status indicator.
+#[derive(PartialEq, Debug)]
 pub enum POP3ResponseStatus {
     Positive,
     Negative,
@@ -14,6 +15,7 @@ pub enum POP3ResponseStatus {
 
 /// Represents a POP3 server response, encapsulating the status indicator
 /// and the message.
+#[derive(PartialEq, Debug)]
 pub struct POP3Response {
     pub status: POP3ResponseStatus,
     pub message: Bytes
@@ -48,14 +50,14 @@ impl TryFrom<Bytes> for POP3Response {
         let msg_start;
 
         // Parse the response status
-        let status = if bytes.slice(0..3) == "+OK" {
+        let status = if bytes.len() >= 3 && bytes.slice(..3) == "+OK" {
             msg_start = 4;
             Positive
-        } else if bytes.slice(0..4) == "-ERR" {
+        } else if bytes.len() >= 4 && bytes.slice(..4) == "-ERR" {
             msg_start = 5;
             Negative
         } else {
-            return Err(InvalidStatus);
+            return Err(InvalidSyntax);
         };
 
         // If there's no message, return before trying to parse it
@@ -66,7 +68,7 @@ impl TryFrom<Bytes> for POP3Response {
         // Check that there is a space between the status and the message
         if let Some(c) = bytes.get(msg_start-1) {
             if c != &b' ' {
-                return Err(InvalidStatus)
+                return Err(InvalidSyntax)
             }
         }
 
@@ -123,10 +125,10 @@ fn contains_crlf(bytes: &Bytes) -> bool {
     false
 }
 
-#[derive(Debug)]
+#[derive(PartialEq, Debug)]
 pub enum POP3ResponseErr {
     /// Returned if the server's response doesn't start with "+OK" or "-ERR"
-    InvalidStatus,
+    InvalidSyntax,
     /// Returned if the "CRLF.CRLF" sequence terminating a multiline response
     /// hasn't been recieved yet
     IncompleteResponse,
@@ -139,10 +141,53 @@ impl fmt::Display for POP3ResponseErr {
         use POP3ResponseErr::*;
 
         let err_message = match self {
-            InvalidStatus => "POP3 server response is invalid",
+            InvalidSyntax => "POP3 server response is invalid",
             IncompleteResponse => "POP3 server multiline response is incomplete",
         };
 
         write!(f, "{}", err_message)
     }
+}
+
+#[test]
+fn bytes_to_pop3_response() {
+    // These should parse with no problem
+    assert_eq!(
+        POP3Response::try_from(Bytes::from("+OK")).unwrap(), 
+        POP3Response::positive("".into())
+    );
+    assert_eq!(
+        POP3Response::try_from(Bytes::from("-ERR")).unwrap(), 
+        POP3Response::negative("".into())
+    );
+    assert_eq!(
+        POP3Response::try_from(Bytes::from("+OK Hello, world!")).unwrap(), 
+        POP3Response::positive("Hello, world!".into())
+    );
+    assert_eq!(
+        POP3Response::try_from(Bytes::from(
+            "+OK This\r\nis\r\na\r\nmulti.line\r\n.f\r\nmessage\r\n.\r\n"
+        )).unwrap(), 
+        POP3Response::positive("This\r\nis\r\na\r\nmulti.line\r\n.f\r\nmessage".into())
+    );
+
+    // These will not parse for syntactical reasons
+    assert_eq!(
+        POP3Response::try_from(Bytes::from("+ok")).err().unwrap(), 
+        POP3ResponseErr::InvalidSyntax
+    );
+    assert_eq!(
+        POP3Response::try_from(Bytes::from("-eRr")).err().unwrap(), 
+        POP3ResponseErr::InvalidSyntax
+    );
+    assert_eq!(
+        POP3Response::try_from(Bytes::from("+OKHello, World")).err().unwrap(), 
+        POP3ResponseErr::InvalidSyntax
+    );
+
+    // This will not parse because it excludes the termination sequence "CRLF.CRLF"
+    assert_eq!(
+        POP3Response::try_from(Bytes::from("+OK 2 messages\r\n1 200\r\n 2 200")).err().unwrap(), 
+        POP3ResponseErr::IncompleteResponse
+    );
 }
