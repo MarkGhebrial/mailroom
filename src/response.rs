@@ -1,21 +1,23 @@
-//! 
-//! 
-
 use bytes::{Bytes, BytesMut};
 use std::error::Error;
 use std::fmt;
 
+use POP3ResponseStatus::*;
+
+/// POP3 servers reply with only two response codes: "+OK" and "-ERR"
+/// The "+OK" code is called the positive status indicator, and the 
+/// "-ERR" code is called the negative status indicator.
 pub enum POP3ResponseStatus {
     Positive,
     Negative,
 }
 
+/// Represents a POP3 server response, encapsulating the status indicator
+/// and the message.
 pub struct POP3Response {
     pub status: POP3ResponseStatus,
     pub message: Bytes
 }
-
-use POP3ResponseStatus::*;
 
 impl POP3Response {
     pub fn new(status: POP3ResponseStatus, message: Bytes) -> Self {
@@ -38,6 +40,8 @@ impl POP3Response {
 impl TryFrom<Bytes> for POP3Response {
     type Error = POP3ResponseErr;
 
+    /// Attempt to convert Bytes to a POP3Response. If the attempt fails,
+    /// a POP3ResponseErr will be returned.
     fn try_from(bytes: Bytes) -> Result<Self, Self::Error> {
         use POP3ResponseErr::*;
 
@@ -54,6 +58,7 @@ impl TryFrom<Bytes> for POP3Response {
             return Err(InvalidStatus);
         };
 
+        // If there's no message, return before trying to parse it
         if bytes.len() == msg_start - 1 {
             return Ok(Self::new(status, "".into()));
         }
@@ -68,8 +73,12 @@ impl TryFrom<Bytes> for POP3Response {
         let mut message = bytes.slice(msg_start..);
         if contains_crlf(&message) {
             if message.slice(message.len()-5..) == "\r\n.\r\n" {
-                message = message.slice(..message.len()-5); // Remove the terminating sequence from the message
+                // Remove the multiline terminating sequence from the message
+                message = message.slice(..message.len()-5);
             } else {
+                // If the message contains a CRLF sequence, but does not
+                // end with the multiline response terminator, the message
+                // is incomplete
                 return Err(IncompleteResponse);
             }
         }
@@ -80,6 +89,7 @@ impl TryFrom<Bytes> for POP3Response {
 
 /// Convert a POP3Response to Bytes
 impl From<POP3Response> for Bytes {
+    /// Convert a POP3Response to Bytes
     fn from(response: POP3Response) -> Bytes {
         let mut out = BytesMut::new();
 
@@ -103,6 +113,7 @@ impl From<POP3Response> for Bytes {
     }
 }
 
+/// Check if a Bytes contains a CRLF sequence ("\r\n")
 fn contains_crlf(bytes: &Bytes) -> bool {
     for i in 0..bytes.len()-1 {
         if bytes.slice(i..i+2) == "\r\n" {
