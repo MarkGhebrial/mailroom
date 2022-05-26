@@ -1,8 +1,8 @@
 mod command;
-use command::*;
+pub use command::*;
 
 mod connection;
-use connection::*;
+pub use connection::*;
 
 mod response;
-use response::*;
+pub use response::*;
