@@ -1,6 +1,7 @@
 use std::collections::HashMap;
 
-use super::{Mail, MailboxError};
+use super::Mail;
+use crate::err::MailboxError;
 use MailboxError::*;
 
 pub trait MailBox {

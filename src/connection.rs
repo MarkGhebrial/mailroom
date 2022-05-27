@@ -3,10 +3,10 @@
 //! from the server.
 
 use tokio::net::{TcpStream};
-use tokio::io::{self, AsyncWriteExt};
+use tokio::io::{self, AsyncWriteExt, AsyncReadExt};
 use bytes::{Bytes, BytesMut};
 
-use crate::response::{POP3Response};
+use crate::{POP3Response, POP3Command};
 
 pub struct POP3Connection {
     stream: TcpStream,
@@ -26,5 +26,11 @@ impl POP3Connection {
         self.stream.write_all(&Bytes::from(response)[..]).await?;
 
         Ok(())
+    }
+
+    pub async fn read_command(&mut self) -> POP3Command {
+        let _n = self.stream.read_buf(&mut self.buffer).await;
+
+        POP3Command::NoOp
     }
 }

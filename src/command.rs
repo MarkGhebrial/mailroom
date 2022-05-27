@@ -1,4 +1,5 @@
 use bytes::Bytes;
+use crate::err::POP3CommandErr;
 
 pub enum POP3Command {
     /// `QUIT`; If issued during the AUTHORIZATION  state, then close the
@@ -51,4 +52,22 @@ pub enum POP3Command {
 
     // `APOP`; A more secure authentication method.
     APop { username: Bytes, md5_digest: Bytes },
+}
+
+impl POP3Command {
+    pub fn parse(bytes: Bytes) -> Result<Self, POP3CommandErr> {
+        Self::try_from(bytes)
+    }
+}
+
+// Convert Bytes to POP3Response
+impl TryFrom<Bytes> for POP3Command {
+    type Error = POP3CommandErr;
+
+    /// Attempt to convert Bytes to a POP3Response. If the attempt fails,
+    /// a POP3ResponseErr will be returned.
+    fn try_from(_bytes: Bytes) -> Result<Self, Self::Error> {
+        
+        Ok(POP3Command::NoOp)
+    }
 }

@@ -1,6 +1,5 @@
 use bytes::{Bytes, BytesMut};
-use std::error::Error;
-use std::fmt;
+use crate::err::POP3ResponseErr;
 
 use POP3ResponseStatus::*;
 
@@ -24,6 +23,7 @@ pub struct POP3Response {
 }
 
 impl POP3Response {
+    /// Create a new POP3Response
     pub fn new(status: POP3ResponseStatus, message: Bytes) -> Self {
         Self {
             status,
@@ -31,12 +31,19 @@ impl POP3Response {
         }
     }
 
+    /// Create a positive POP3Response
     pub fn positive(message: Bytes) -> Self {
         Self::new(Positive, message)
     }
 
+    /// Create a negative POP3Response
     pub fn negative(message: Bytes) -> Self {
         Self::new(Negative, message)
+    }
+
+    /// Parse Bytes into a POP3Response
+    pub fn parse(bytes: Bytes) -> Result<Self, POP3ResponseErr> {
+        Self::try_from(bytes)
     }
 }
 
@@ -125,30 +132,6 @@ fn contains_crlf(bytes: &Bytes) -> bool {
         }
     }
     false
-}
-
-#[derive(PartialEq, Debug)]
-pub enum POP3ResponseErr {
-    /// Returned if the server's response doesn't start with "+OK" or "-ERR"
-    InvalidSyntax,
-    /// Returned if the "CRLF.CRLF" sequence terminating a multiline response
-    /// hasn't been recieved yet
-    IncompleteResponse,
-}
-
-impl Error for POP3ResponseErr {}
-
-impl fmt::Display for POP3ResponseErr {
-    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        use POP3ResponseErr::*;
-
-        let err_message = match self {
-            InvalidSyntax => "POP3 server response is invalid",
-            IncompleteResponse => "POP3 server multiline response is incomplete",
-        };
-
-        write!(f, "{}", err_message)
-    }
 }
 
 #[test]
