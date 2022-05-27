@@ -49,6 +49,6 @@ pub enum POP3Command {
     /// AUTHORIZATION state. Must be preceeded by `USER` command.
     Password { password: Bytes },
 
-    // `APOP`; 
+    // `APOP`; A more secure authentication method.
     APop { username: Bytes, md5_digest: Bytes },
 }
