@@ -3,6 +3,7 @@ use crate::err::{POP3CommandErr, ParseError};
 use POP3CommandErr::*;
 use POP3Command::*;
 
+#[derive(PartialEq, Debug)]
 pub enum POP3Command {
     /// `QUIT`; If issued during the AUTHORIZATION  state, then close the
     /// connection. If issued during the TRANSACTION state, delete all
@@ -66,7 +67,7 @@ impl POP3Command {
 impl TryFrom<Bytes> for POP3Command {
     type Error = POP3CommandErr;
 
-    /// Attempt to convert Bytes to a POP3Response. If the attempt fails,
+    /// Attempt to convert Bytes to a POP3Command. If the attempt fails,
     /// a POP3ComnmandErr will be returned.
     fn try_from(mut bytes: Bytes) -> Result<Self, Self::Error> {
 
@@ -81,11 +82,34 @@ impl TryFrom<Bytes> for POP3Command {
         let mut last_space = 0;
         let iter = bytes.clone().into_iter();
         for (i, c) in iter.enumerate() {
-            if c == b' ' || i == bytes.len() - 1 {
+            if c == b' ' {
                 args.push(bytes.slice(last_space..i));
                 last_space = i+1;
+            } else if i == bytes.len() - 1 {
+                args.push(bytes.slice(last_space..));
             }
         }
+
+        // A closure to parse ASCII arguments
+        let bytes_arg = |index: usize| -> Result<Bytes, POP3CommandErr> {
+            match args.get(index) {
+                Some(n) => Ok(n.clone()),
+                None => return Err(InvalidArguments),
+            }
+        };
+
+        // A closure to parse a numeric argument
+        let numeric_arg = |index: usize| -> Result<usize, POP3CommandErr> {
+            match args.get(index) {
+                Some(b) => {
+                    match bytes_to_uint(&b) {
+                        Ok(n) => return Ok(n),
+                        Err(_) => return Err(InvalidArguments)
+                    }
+                },
+                None => return Err(InvalidArguments)
+            }
+        };
         
         println!("{:?}", args);
 
@@ -93,42 +117,21 @@ impl TryFrom<Bytes> for POP3Command {
             Some(s) => match &uppercase(&s)[..] {
                 b"QUIT" => Quit,
                 b"STAT" => Stat,
-                b"LIST" => {
-                    let message_number = match args.get(1) {
-                        Some(bytes) => {
-                            let mut string = String::new();
-                            for b in bytes {
-                                string.push(*b as char);
-                            }
-                            None // TODO: incomplete!
-                        },
-                        None => None,
-                    };
-                    List { message_number }
-                },
-                b"RETR" => NoOp,
-                b"DELE" => NoOp,
+                b"LIST" => List { message_number: numeric_arg(1).ok() },
+                b"RETR" => Retrieve { message_number: numeric_arg(1)? },
+                b"DELE" => Delete { message_number: numeric_arg(1)? },
                 b"NOOP" => NoOp,
                 b"RSET" => Reset,
-                b"TOP"  => NoOp,
-                b"UIDL" => UniqueIDListing { message_number: None },
-                b"USER" => Username { username: match args.get(1) {
-                    Some(n) => n.clone(),
-                    None => return Err(InvalidArguments),
-                }},
-                b"PASS" => Password { password: match args.get(1) {
-                    Some(n) => n.clone(),
-                    None => return Err(InvalidArguments),
-                }},
+                b"TOP"  => Top {
+                    message_number: numeric_arg(1)?,
+                    n: numeric_arg(2)?,
+                },
+                b"UIDL" => UniqueIDListing { message_number: numeric_arg(1).ok() },
+                b"USER" => Username { username: bytes_arg(1)? },
+                b"PASS" => Password { password: bytes_arg(1)? },
                 b"APOP" => APop {
-                    username: match args.get(1) {
-                        Some(n) => n.clone(),
-                        None => return Err(InvalidArguments),
-                    },
-                    md5_digest: match args.get(2) {
-                        Some(n) => n.clone(),
-                        None => return Err(InvalidArguments),
-                    }
+                    username: bytes_arg(1)?,
+                    md5_digest: bytes_arg(2)?
                 },
                 _ => return Err(UnknownCommand(s.clone()))
             },
@@ -172,7 +175,41 @@ fn uppercase(bytes: &Bytes) -> Bytes {
 
 #[test]
 fn parse_command() {
-    POP3Command::try_from(Bytes::from("NOOP 1 2 3 4\r\n")).unwrap();
+    assert_eq!(
+        POP3Command::try_from(Bytes::from("NOOP 1 2 3 4\r\n")).unwrap(),
+        NoOp
+    );
+    assert_eq!(
+        POP3Command::try_from(Bytes::from("quit\r\n")).unwrap(),
+        Quit
+    );
+    assert_eq!(
+        POP3Command::try_from(Bytes::from("LIST 1\r\n")).unwrap(),
+        List { message_number: Some(1) }
+    );
+    assert_eq!(
+        POP3Command::try_from(Bytes::from("LIST \r\n")).unwrap(),
+        List { message_number: None }
+    );
+    assert_eq!(
+        POP3Command::try_from(Bytes::from("RETR 1234321\r\n")).unwrap(),
+        Retrieve { message_number: 1234321 }
+    );
+    assert_eq!(
+        POP3Command::try_from(Bytes::from("TOP 5 10\r\n")).unwrap(),
+        Top { message_number: 5, n: 10 }
+    );
+    assert_eq!(
+        POP3Command::try_from(Bytes::from("usEr mghebrial\r\n")).unwrap(),
+        Username { username: "mghebrial".into() }
+    );
+    assert_eq!(
+        POP3Command::try_from(Bytes::from("APOP mrose c4c9334bac560ecc979e58001b3e22fb\r\n")).unwrap(),
+        APop {
+            username: "mrose".into(),
+            md5_digest: "c4c9334bac560ecc979e58001b3e22fb".into(),
+        }
+    );
 }
 
 #[test]
@@ -184,4 +221,12 @@ fn uint_parse() {
     assert_eq!(bytes_to_uint(&Bytes::from("Hell0, w0r1d!")).err().unwrap(), ParseError);
     assert_eq!(bytes_to_uint(&Bytes::from("-100")).err().unwrap(), ParseError);
     assert_eq!(bytes_to_uint(&Bytes::from("+100")).err().unwrap(), ParseError);
+}
+
+#[test]
+fn bytes_uppercase() {
+    assert_eq!(
+        uppercase(&"abcdefghijklmnopqrstuvwxyz".into()),
+        Bytes::from("ABCDEFGHIJKLMNOPQRSTUVWXYZ")
+    );
 }
