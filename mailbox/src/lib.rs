@@ -1,3 +1,5 @@
+pub mod err;
+
 mod mail;
 pub use mail::*;
 

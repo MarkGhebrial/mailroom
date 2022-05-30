@@ -4,10 +4,7 @@ pub use command::*;
 mod connection;
 pub use connection::*;
 
-mod err;
-
-mod mailbox;
-pub use mailbox::*;
+pub mod err;
 
 mod response;
 pub use response::*;
