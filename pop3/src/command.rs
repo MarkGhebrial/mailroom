@@ -71,6 +71,10 @@ impl TryFrom<Bytes> for POP3Command {
     /// a POP3ComnmandErr will be returned.
     fn try_from(mut bytes: Bytes) -> Result<Self, Self::Error> {
 
+        if bytes.len() < 2 {
+            return Err(IncompleteResponse);
+        }
+
         // Make sure the command ends with a CRLF pair
         if &bytes.slice(bytes.len() - 2..)[..] != b"\r\n" {
             return Err(IncompleteResponse)
@@ -131,7 +135,7 @@ impl TryFrom<Bytes> for POP3Command {
                 b"PASS" => Password { password: bytes_arg(1)? },
                 b"APOP" => APop {
                     username: bytes_arg(1)?,
-                    md5_digest: bytes_arg(2)?
+                    md5_digest: bytes_arg(2)?,
                 },
                 _ => return Err(UnknownCommand(s.clone()))
             },
@@ -142,6 +146,8 @@ impl TryFrom<Bytes> for POP3Command {
     }
 }
 
+/// Parse a Bytes into an unsigned integer. If it contains any non-numeric
+/// characters, a ParseError will be returned
 fn bytes_to_uint(bytes: &Bytes) -> Result<usize, ParseError> {
     if bytes.len() == 0 { return Err(ParseError) }
 

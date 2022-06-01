@@ -32,13 +32,13 @@ impl POP3Response {
     }
 
     /// Create a positive POP3Response
-    pub fn positive(message: Bytes) -> Self {
-        Self::new(Positive, message)
+    pub fn positive<T: Into<Bytes>>(message: T) -> Self {
+        Self::new(Positive, message.into())
     }
 
     /// Create a negative POP3Response
-    pub fn negative(message: Bytes) -> Self {
-        Self::new(Negative, message)
+    pub fn negative<T: Into<Bytes>>(message: T) -> Self {
+        Self::new(Negative, message.into())
     }
 
     /// Parse Bytes into a multiline POP3Response
@@ -154,6 +154,8 @@ impl From<POP3Response> for Bytes {
 
 /// Check if a Bytes contains a CRLF sequence ("\r\n")
 fn contains_crlf(bytes: &Bytes) -> bool {
+    if bytes.len() < 2 { return false; }
+
     for i in 0..bytes.len()-1 {
         if bytes.slice(i..i+2) == "\r\n" {
             return true;
@@ -167,21 +169,21 @@ fn bytes_to_pop3_response() {
     // These should parse with no problem
     assert_eq!(
         POP3Response::parse_oneline(Bytes::from("+OK\r\n")).unwrap(), 
-        POP3Response::positive("".into())
+        POP3Response::positive("")
     );
     assert_eq!(
         POP3Response::parse_oneline(Bytes::from("-ERR\r\n")).unwrap(), 
-        POP3Response::negative("".into())
+        POP3Response::negative("")
     );
     assert_eq!(
         POP3Response::parse_oneline(Bytes::from("+OK Hello, world!\r\n")).unwrap(), 
-        POP3Response::positive("Hello, world!".into())
+        POP3Response::positive("Hello, world!")
     );
     assert_eq!(
         POP3Response::parse_multiline(Bytes::from(
             "+OK This\r\nis\r\na\r\nmulti.line\r\n.f\r\nmessage\r\n.\r\n"
         )).unwrap(), 
-        POP3Response::positive("This\r\nis\r\na\r\nmulti.line\r\n.f\r\nmessage".into())
+        POP3Response::positive("This\r\nis\r\na\r\nmulti.line\r\n.f\r\nmessage")
     );
 
     // These will not parse for syntactical reasons
@@ -208,11 +210,11 @@ fn bytes_to_pop3_response() {
 #[test]
 fn pop3_response_to_bytes() {
     assert_eq!(
-        Bytes::from(POP3Response::positive("this is a test".into())),
+        Bytes::from(POP3Response::positive("this is a test")),
         Bytes::from("+OK this is a test\r\n")
     );
     assert_eq!(
-        Bytes::from(POP3Response::negative("this is a\r\nmultiline test".into())),
+        Bytes::from(POP3Response::negative("this is a\r\nmultiline test")),
         Bytes::from("-ERR this is a\r\nmultiline test\r\n.\r\n")
     );
 }

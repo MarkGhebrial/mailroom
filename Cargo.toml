@@ -10,5 +10,6 @@ edition = "2021"
 members = ["pop3", "mailbox"]
 
 [dependencies]
+tokio = { version = "1", features = ["full"] }
 pop3 = { path = "pop3" }
 mailbox = { path = "mailbox" }

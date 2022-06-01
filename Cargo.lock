@@ -171,6 +171,7 @@ version = "0.1.0"
 dependencies = [
  "mailbox",
  "pop3",
+ "tokio",
 ]
 
 [[package]]
