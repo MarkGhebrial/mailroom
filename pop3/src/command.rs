@@ -115,8 +115,6 @@ impl TryFrom<Bytes> for POP3Command {
             }
         };
         
-        println!("{:?}", args);
-
         let command = match args.get(0) {
             Some(s) => match &uppercase(&s)[..] {
                 b"QUIT" => Quit,

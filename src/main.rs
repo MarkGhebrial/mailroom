@@ -5,21 +5,19 @@ use tokio::net::TcpListener;
 async fn main() {
     let pop3_listener = TcpListener::bind("localhost:110").await.unwrap();
 
-    loop {
-        let (socket, _) = pop3_listener.accept().await.unwrap();
-        println!("Accepted POP3 connection");
-        let mut connection = POP3Connection::new(socket);
+    let handle = tokio::spawn(async move {
+        loop {
+            let (socket, _) = pop3_listener.accept().await.unwrap();
 
-        connection.send_response(POP3Response::positive("good morning")).await.unwrap();
-        println!("Greeted client");
+            println!("Accepted POP3 connection");
+            let mut connection = POP3Connection::new(socket);
 
-        let command = connection.read_command().await.unwrap();
-        println!("COMMAND: {:?}", command);
-        match command {
-            Username { username: _ } => {
-                connection.send_response(POP3Response::positive("")).await.unwrap();
-            }
-            _ => connection.send_response(POP3Response::positive("")).await.unwrap(),
-        };
-    }
+            connection.authenticate().await.unwrap();
+            println!("Authenticated");
+
+            connection.transaction().await.unwrap();
+            println!("Finished");
+        }
+    });
+    handle.await.unwrap();
 }

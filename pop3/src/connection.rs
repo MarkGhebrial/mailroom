@@ -29,19 +29,25 @@ impl POP3Connection {
         Ok(())
     }
 
-    /// Read a POP3Command from the client
+    /// Read a POP3Command from the client.
+    /// 
+    /// If the client sends two commands in a row without the server
+    /// calling this method, Things Will Break.
     pub async fn read_command(&mut self) -> Result<POP3Command, io::Error> {
         loop {
-            // Write 
+            // Write the bytes from the client into the buffer
             self.stream.read_buf(&mut self.buffer).await?;
             println!("{:?}", self.buffer);
     
             match POP3Command::parse(self.buffer.clone().freeze()) {
-                Ok(command) => return Ok(command),
+                Ok(command) => {
+                    self.buffer.clear();
+                    return Ok(command);
+                },
                 Err(POP3CommandErr::IncompleteResponse) => (),
                 Err(POP3CommandErr::UnknownCommand(_)) => {
                     self.buffer.clear();
-                    self.send_response(POP3Response::negative("")).await.unwrap();
+                    self.send_response(POP3Response::negative("unknown command")).await?;
                 },
                 Err(_) => self.buffer.clear(),
             };
@@ -49,20 +55,65 @@ impl POP3Connection {
     }
 
     pub async fn authenticate(&mut self) -> Result<(), io::Error> {
-        let mut done = false;
-        while !done {
+        // Greet the client
+        self.send_response(POP3Response::positive("good morning")).await?;
+
+        loop {
             let command = self.read_command().await?;
 
+            // Handle the commands valid in the authentication state
             match command {
                 Username { username: _ } => self.send_response(POP3Response::positive("")).await?,
-                Password { password: _ } => self.send_response(POP3Response::positive("")).await?,
-                APop { username: _, md5_digest: _ } => self.send_response(POP3Response::positive("")).await?,
-                Quit => self.close().await,
+                Password { password: _ } => {
+                    self.send_response(POP3Response::positive("")).await?;
+                    return Ok(());
+                },
+                APop { username: _, md5_digest: _ } => {
+                    self.send_response(POP3Response::positive("")).await?;
+                    return Ok(());
+                }
+                Quit => {
+                    self.close().await;
+                    return Ok(());
+                },
                 _ => self.send_response(POP3Response::negative("command not valid during authentication")).await?
             }
         }
+    }
 
-        Ok(())
+    pub async fn transaction(&mut self) -> Result<(), io::Error> {
+        loop {
+            let command = self.read_command().await?;
+
+            self.send_response(match command {
+                Stat => self.stat(),
+                List { message_number: _ } => self.list(),
+                Retrieve { message_number: _ } => self.retrieve(),
+                Delete { message_number: _ } => POP3Response::positive(""),
+                NoOp => POP3Response::positive(""),
+                Reset => POP3Response::positive(""),
+                Quit => {
+                    // TODO: delete messaged marked for deletion
+                    self.close().await;
+                    return Ok(());
+                },
+                Top { message_number: _, n: _ } => POP3Response::negative("unsupported"),
+                UniqueIDListing { message_number: _ } => POP3Response::negative("unsupported"),
+                _ => POP3Response::negative("command not valid during transaction"),
+            }).await?;
+        }
+    }
+
+    fn stat(&self) -> POP3Response {
+        POP3Response::positive("1 100")
+    }
+
+    fn list(&self) -> POP3Response {
+        POP3Response::positive("\r\n1 100")
+    }
+
+    fn retrieve(&self) -> POP3Response {
+        POP3Response::positive("this is a message")
     }
 
     /// Close the connection
