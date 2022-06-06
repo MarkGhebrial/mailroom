@@ -113,7 +113,7 @@ impl POP3Connection {
     }
 
     fn retrieve(&self) -> POP3Response {
-        POP3Response::positive("this is a message")
+        POP3Response::positive("\r\nthis is a message")
     }
 
     /// Close the connection
