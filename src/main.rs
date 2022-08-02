@@ -1,4 +1,4 @@
-use pop3::{POP3Connection, POP3Response, POP3Command::{self, *}};
+use pop3::{POP3Connection};
 use tokio::net::TcpListener;
 
 #[tokio::main]

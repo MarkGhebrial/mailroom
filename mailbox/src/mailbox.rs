@@ -1,6 +1,6 @@
 use std::collections::HashMap;
 
-use super::Mail;
+use crate::imf::Mail;
 use crate::err::MailboxError;
 use MailboxError::*;
 
@@ -16,7 +16,7 @@ pub struct TestMailBox {
 impl TestMailBox {
     pub fn new() -> Self {
         Self {
-            db: vec![Mail::new("This is a plaintext, non MIME message".into())]
+            db: vec![]
         }
     }
 }
