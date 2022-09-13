@@ -93,7 +93,7 @@ impl POP3Connection {
                 NoOp => POP3Response::positive(""),
                 Reset => POP3Response::positive(""),
                 Quit => {
-                    // TODO: delete messaged marked for deletion
+                    // TODO: delete messages marked for deletion
                     self.close().await;
                     return Ok(());
                 },
