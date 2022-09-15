@@ -18,8 +18,19 @@ impl POP3Connection {
     pub fn new(socket: TcpStream) -> Self {
         Self {
             stream: socket,
-            buffer: BytesMut::with_capacity(4096)
+            buffer: BytesMut::new()
         }
+    }
+
+    /// Commence the interaction with the client.
+    pub async fn begin(&mut self) -> Result<(), io::Error> {
+        self.authenticate().await?;
+        println!("Authenticated");
+        
+        self.transaction().await?;
+        println!("Finished");
+
+        Ok(())
     }
 
     /// Send a response or greeting to the client
@@ -39,7 +50,10 @@ impl POP3Connection {
     pub async fn read_command(&mut self) -> Result<POP3Command, io::Error> {
         loop {
             // Write the bytes from the client into the buffer
-            self.stream.read_buf(&mut self.buffer).await?;
+            if self.stream.read_buf(&mut self.buffer).await? == 0 {
+                self.close().await?;
+                return Err(io::Error::from(io::ErrorKind::ConnectionAborted))
+            }
             println!("{:?}", self.buffer);
     
             match POP3Command::parse(self.buffer.clone().freeze()) {

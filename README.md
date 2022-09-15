@@ -14,6 +14,7 @@ This is very much a work in progress and is currently lacking many crucial featu
 ## What's missing / To do (in order of priority):
  - A database to store emails in (kinda important!)
  - A proper configuration method
+ - Proper event logging
  - TLS support
     - Automatically get certificates from Let's Encrypt?
  - SMTP support

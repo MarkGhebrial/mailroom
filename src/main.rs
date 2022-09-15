@@ -3,7 +3,7 @@ use tokio::net::TcpListener;
 
 #[tokio::main]
 async fn main() {
-    let pop3_listener = TcpListener::bind("localhost:110").await.unwrap();
+    let pop3_listener = TcpListener::bind("192.168.0.138:110").await.unwrap();
 
     let handle = tokio::spawn(async move {
         loop {
@@ -12,11 +12,9 @@ async fn main() {
             println!("Accepted POP3 connection");
             let mut connection = POP3Connection::new(socket);
 
-            connection.authenticate().await.unwrap();
-            println!("Authenticated");
-
-            connection.transaction().await.unwrap();
-            println!("Finished");
+            if let Err(e) = connection.begin().await {
+                println!("POP3 Connection ended with error: {}", e)
+            }
         }
     });
     handle.await.unwrap();
