@@ -68,7 +68,7 @@ impl TryFrom<Bytes> for POP3Command {
     type Error = POP3CommandErr;
 
     /// Attempt to convert Bytes to a POP3Command. If the attempt fails,
-    /// a POP3ComnmandErr will be returned.
+    /// a POP3CommandErr will be returned.
     fn try_from(mut bytes: Bytes) -> Result<Self, Self::Error> {
 
         if bytes.len() < 2 {

@@ -37,7 +37,6 @@ impl TryFrom<String> for Mail {
         let header_vec = unfold(header_str)?;
 
         let mut header_map: HashMap<String, String> = HashMap::new();
-
         for header in header_vec {
             let (name, body) = header.split_once(":").ok_or(MailParseError)?;
 
@@ -107,6 +106,6 @@ fn header_unfolding() {
         Ok(vec![
             "Subject: This is a test. ".to_owned(),
             "Foo: Bar\tBiz".to_owned()
-            ])
+        ])
     );
 }

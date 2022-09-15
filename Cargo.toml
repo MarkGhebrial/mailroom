@@ -13,3 +13,4 @@ members = ["pop3", "mailbox"]
 tokio = { version = "1", features = ["full"] }
 pop3 = { path = "pop3" }
 mailbox = { path = "mailbox" }
+#tokio-native-tls = "0.3.0"

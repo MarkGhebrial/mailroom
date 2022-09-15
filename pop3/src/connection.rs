@@ -4,7 +4,7 @@
 
 use tokio::net::{TcpStream};
 use tokio::io::{self, AsyncWriteExt, AsyncReadExt};
-use bytes::{Bytes, BytesMut, BufMut};
+use bytes::{Bytes, BytesMut};
 
 use crate::{POP3Response, POP3Command, err::POP3CommandErr};
 use POP3Command::*;
@@ -24,7 +24,10 @@ impl POP3Connection {
 
     /// Send a response or greeting to the client
     pub async fn send_response(&mut self, response: POP3Response) -> Result<(), io::Error> {
-        self.stream.write_all(&Bytes::from(response)[..]).await?;
+        let bytes = &Bytes::from(response)[..];
+        // Print the response
+        print!("{}", bytes.to_owned().into_iter().map(|b| b as char).collect::<String>());
+        self.stream.write_all(bytes).await?;
 
         Ok(())
     }
@@ -73,7 +76,7 @@ impl POP3Connection {
                     return Ok(());
                 }
                 Quit => {
-                    self.close().await;
+                    self.close().await?;
                     return Ok(());
                 },
                 _ => self.send_response(POP3Response::negative("command not valid during authentication")).await?
@@ -94,7 +97,7 @@ impl POP3Connection {
                 Reset => POP3Response::positive(""),
                 Quit => {
                     // TODO: delete messages marked for deletion
-                    self.close().await;
+                    self.close().await?;
                     return Ok(());
                 },
                 Top { message_number: _, n: _ } => POP3Response::negative("unsupported"),
@@ -117,7 +120,8 @@ impl POP3Connection {
     }
 
     /// Close the connection
-    pub async fn close(&self) {
-
+    pub async fn close(&mut self) -> Result<(), io::Error> {
+        self.stream.shutdown().await?;
+        Ok(())
     }
 }
