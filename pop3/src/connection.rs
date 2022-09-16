@@ -26,7 +26,7 @@ impl POP3Connection {
     pub async fn begin(&mut self) -> Result<(), io::Error> {
         self.authenticate().await?;
         println!("Authenticated");
-        
+
         self.transaction().await?;
         println!("Finished");
 
@@ -71,6 +71,7 @@ impl POP3Connection {
         }
     }
 
+    // TODO: return authenticated user information
     pub async fn authenticate(&mut self) -> Result<(), io::Error> {
         // Greet the client
         self.send_response(POP3Response::positive("good morning")).await?;
@@ -93,12 +94,14 @@ impl POP3Connection {
                     self.close().await?;
                     return Ok(());
                 },
+                // TODO: Update CAPA list as more features are implemented
+                Capabilities => self.send_response(POP3Response::positive("\r\nUSER")).await?,
                 _ => self.send_response(POP3Response::negative("command not valid during authentication")).await?
             }
         }
     }
 
-    pub async fn transaction(&mut self) -> Result<(), io::Error> {
+    pub async fn transaction(&mut self/*, user: User*/) -> Result<(), io::Error> {
         loop {
             let command = self.read_command().await?;
 
@@ -116,6 +119,8 @@ impl POP3Connection {
                 },
                 Top { message_number: _, n: _ } => POP3Response::negative("unsupported"),
                 UniqueIDListing { message_number: _ } => POP3Response::negative("unsupported"),
+                // TODO: Update CAPA list as more features are implemented
+                Capabilities => POP3Response::positive("\r\nUSER"),
                 _ => POP3Response::negative("command not valid during transaction"),
             }).await?;
         }

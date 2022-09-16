@@ -35,8 +35,11 @@ pub enum POP3Command {
      * The above commands are required to be implemented by minimal POP3 
      * implementations.
      * 
-     * The below commands are optional.
+     * The below commands are optional or extensions.
      */
+
+    /// `CAPA`; List the extensions supported by this server.
+    Capabilities,
 
     /// `TOP`; Get the header and first `n` lines of the specified message.
     Top { message_number: usize, n: usize },
@@ -124,6 +127,7 @@ impl TryFrom<Bytes> for POP3Command {
                 b"DELE" => Delete { message_number: numeric_arg(1)? },
                 b"NOOP" => NoOp,
                 b"RSET" => Reset,
+                b"CAPA" => Capabilities,
                 b"TOP"  => Top {
                     message_number: numeric_arg(1)?,
                     n: numeric_arg(2)?,
