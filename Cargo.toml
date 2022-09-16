@@ -2,15 +2,14 @@
 name = "rusty-mail-server"
 description = "An email server, written in Rust"
 repository = "https://github.com/MarkGhebrial/rusty-mail-server"
-license = "MIT"
 version = "0.1.0"
 edition = "2021"
 
 [workspace]
-members = ["pop3", "mailbox"]
+members = ["pop3", "database"]
 
 [dependencies]
 tokio = { version = "1", features = ["full"] }
 pop3 = { path = "pop3" }
-mailbox = { path = "mailbox" }
+database = { path = "database" }
 #tokio-native-tls = "0.3.0"
