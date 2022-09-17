@@ -1,8 +1,8 @@
 use std::collections::HashMap;
 
-use crate::imf::Mail;
-use crate::err::MailboxError;
-use MailboxError::*;
+use super::imf::Mail;
+use super::err::MailboxError;
+use super::err::MailboxError::*;
 
 pub trait MailBox {
     fn get_messages(&self) -> HashMap<usize, &Mail>;

@@ -6,7 +6,7 @@ use tokio::net::{TcpStream};
 use tokio::io::{self, AsyncWriteExt, AsyncReadExt};
 use bytes::{Bytes, BytesMut};
 
-use crate::{POP3Response, POP3Command, err::POP3CommandErr};
+use crate::pop3::{POP3Response, POP3Command, err::POP3CommandErr};
 use POP3Command::*;
 
 pub struct POP3Connection {

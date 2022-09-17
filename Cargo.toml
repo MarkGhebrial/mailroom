@@ -1,17 +1,18 @@
 [package]
-name = "rusty-mail-server"
+name = "mailroom"
 description = "An email server, written in Rust"
-repository = "https://github.com/MarkGhebrial/rusty-mail-server"
+repository = "https://github.com/MarkGhebrial/mailroom"
+license = "GPL-3.0-or-later"
 version = "0.1.0"
 edition = "2021"
 
-[workspace]
-members = ["pop3", "database"]
-
 [dependencies]
 tokio = { version = "1", features = ["full"] }
-pop3 = { path = "pop3" }
-database = { path = "database" }
 toml = "0.5.9"
 serde = "1.0.144"
 #tokio-native-tls = "0.3.0"
+bytes = "1"
+email_address = "0.2.3"
+argon2 = "0.4.1"
+rand_core = { version = "0.6", features = ["std"] } # For salt generation
+tokio-postgres = "0.7.7"

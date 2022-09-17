@@ -104,18 +104,6 @@ dependencies = [
 ]
 
 [[package]]
-name = "database"
-version = "0.1.0"
-dependencies = [
- "argon2",
- "bytes",
- "email_address",
- "rand_core",
- "tokio",
- "tokio-postgres",
-]
-
-[[package]]
 name = "digest"
 version = "0.10.5"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -260,6 +248,20 @@ dependencies = [
 ]
 
 [[package]]
+name = "mailroom"
+version = "0.1.0"
+dependencies = [
+ "argon2",
+ "bytes",
+ "email_address",
+ "rand_core",
+ "serde",
+ "tokio",
+ "tokio-postgres",
+ "toml",
+]
+
+[[package]]
 name = "md-5"
 version = "0.10.4"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -373,14 +375,6 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "8b870d8c151b6f2fb93e84a13146138f05d02ed11c7e7c54f8826aaaf7c9f184"
 
 [[package]]
-name = "pop3"
-version = "0.1.0"
-dependencies = [
- "bytes",
- "tokio",
-]
-
-[[package]]
 name = "postgres-protocol"
 version = "0.6.4"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -470,17 +464,6 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "fb5a58c1855b4b6819d59012155603f0b22ad30cad752600aadfcb695265519a"
 dependencies = [
  "bitflags",
-]
-
-[[package]]
-name = "rusty-mail-server"
-version = "0.1.0"
-dependencies = [
- "database",
- "pop3",
- "serde",
- "tokio",
- "toml",
 ]
 
 [[package]]

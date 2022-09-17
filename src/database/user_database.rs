@@ -10,8 +10,8 @@ use argon2::{
 };
 use tokio_postgres::{NoTls, Client};
 
-use crate::err::DbError;
-use crate::user::User;
+use super::err::DbError;
+use super::user::User;
 
 /// Start up the database, modifying it if the configuration has changed and
 /// creating it if it doesn't yet exist.

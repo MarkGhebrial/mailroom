@@ -4,7 +4,7 @@ mod imf;
 pub use imf::*;
 
 mod mailbox;
-pub use crate::mailbox::*;
+pub use crate::database::mailbox::*;
 
 pub mod user_database;
 

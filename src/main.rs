@@ -1,4 +1,6 @@
 mod config;
+mod database;
+mod pop3;
 
 use crate::config::*;
 
@@ -20,7 +22,7 @@ async fn main() {
     };
 
     // TODO: Make config file path an environment variable
-    let config: Config = toml::from_str(
+    let _config: Config = toml::from_str(
         fs::read_to_string(config_path)
         .expect("Couldn't find config file").as_str()
     ).expect("Invalid configuration");

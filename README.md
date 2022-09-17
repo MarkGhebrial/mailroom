@@ -1,8 +1,8 @@
-# Rusty Mail Server
+# Mailroom
 
 An email server written in pure Rust.
 
-This is very much a work in progress and is currently lacking many crucial features.
+This is very much a work in progress and is currently lacking most basic functionality.
 
 ## What works (not necessarily stable or complete!):
  - My implementation of the POP3 *protocol*
@@ -19,3 +19,15 @@ This is very much a work in progress and is currently lacking many crucial featu
     - Automatically get certificates from Let's Encrypt?
  - SMTP support
  - IMAP support
+
+# License
+
+Mailroom - A mail server written in Rust
+
+Copyright (C) 2022 Mark Ghebrial
+
+This program is free software: you can redistribute it and/or modify it under the terms of the GNU General Public License as published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version.
+
+This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License for more details.
+
+You should have received a copy of the GNU General Public License along with this program.  If not, see https://www.gnu.org/licenses/.

@@ -1,5 +1,5 @@
 use bytes::{Bytes, BytesMut};
-use crate::err::{POP3CommandErr, ParseError};
+use crate::pop3::err::{POP3CommandErr, ParseError};
 use POP3CommandErr::*;
 use POP3Command::*;
 

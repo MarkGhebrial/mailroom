@@ -1,5 +1,5 @@
 use bytes::{Bytes, BytesMut};
-use crate::err::POP3ResponseErr;
+use crate::pop3::err::POP3ResponseErr;
 
 use POP3ResponseStatus::*;
 
