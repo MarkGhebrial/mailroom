@@ -1,4 +1,4 @@
-use super::super::err::MailParseError;
+use super::err::MailParseError;
 use std::collections::HashMap;
 
 /// Represents an email message.

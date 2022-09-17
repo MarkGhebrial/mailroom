@@ -1,6 +1,7 @@
 mod config;
 mod database;
 mod pop3;
+mod imf;
 
 use crate::config::*;
 

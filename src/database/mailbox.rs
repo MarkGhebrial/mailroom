@@ -1,6 +1,6 @@
 use std::collections::HashMap;
 
-use super::imf::Mail;
+use crate::imf::Mail;
 use super::err::MailboxError;
 use super::err::MailboxError::*;
 
