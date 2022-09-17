@@ -1,0 +1,6 @@
+[[domains]]
+name = "localhost"
+users = [
+    "mghebrial",
+    "limy"
+]

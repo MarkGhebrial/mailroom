@@ -12,4 +12,6 @@ members = ["pop3", "database"]
 tokio = { version = "1", features = ["full"] }
 pop3 = { path = "pop3" }
 database = { path = "database" }
+toml = "0.5.9"
+serde = "1.0.144"
 #tokio-native-tls = "0.3.0"

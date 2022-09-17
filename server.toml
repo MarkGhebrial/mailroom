@@ -1,4 +1,0 @@
-[domain."example.com"]
-enable_pop3 = true
-enable_imap = true
-enable_smtp = true
