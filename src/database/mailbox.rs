@@ -1,4 +1,4 @@
-use std::collections::HashMap;
+/*use std::collections::HashMap;
 
 use crate::imf::Mail;
 use super::err::MailboxError;
@@ -39,4 +39,4 @@ impl MailBox for TestMailBox {
 
         Ok(())
     }
-}
+}*/

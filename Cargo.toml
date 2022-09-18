@@ -16,3 +16,4 @@ email_address = "0.2.3"
 argon2 = "0.4.1"
 rand_core = { version = "0.6", features = ["std"] } # For salt generation
 tokio-postgres = "0.7.7"
+lazy_static = "1.4.0"

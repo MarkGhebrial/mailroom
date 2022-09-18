@@ -12,16 +12,25 @@ use tokio_postgres::{NoTls, Client};
 
 use super::err::DbError;
 use super::user::User;
+use crate::CONFIG;
 
 /// Start up the database, modifying it if the configuration has changed and
 /// creating it if it doesn't yet exist.
 pub async fn initialize_db() -> Result<Client, tokio_postgres::Error> {
-    
+    // Initialize connection with PostgreSQL server
     let (client, connection) =
-        tokio_postgres::connect("host=localhost user=mail password=Login123", NoTls).await?;
+        tokio_postgres::connect(
+            format!(
+                "host={} user={} password={}",
+                CONFIG.database.hostname,
+                CONFIG.database.user,
+                CONFIG.database.password
+            ).as_str(),
+            NoTls
+        ).await?;
 
     // The connection object performs the actual communication with the database,
-    // so spawn it off to run on its own.
+    // so let it do its own thing in a new task
     tokio::spawn(async move {
         if let Err(e) = connection.await {
             eprintln!("connection error: {}", e);

@@ -1,6 +1,13 @@
+[database]
+# Postgres username
+user = "mail"
+# Postgres password
+password = "Login123" 
+
 [[domains]]
 name = "localhost"
 users = [
     "mghebrial",
     "limy"
 ]
+tls_settings = "disabled"
