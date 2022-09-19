@@ -12,10 +12,10 @@ This is very much a work in progress and is currently lacking most basic functio
    - **Very** minimal; missing a lot of features
 - The configuration file
    - Parsed with serde, then stored in a global static variable
+- Logging with Log4rs
 
 ## What's missing / To do (in order of priority):
 - A database to store emails in (kinda important!)
-- Proper event logging
 - TLS support
    - Automatically get certificates from Let's Encrypt?
 - SMTP support

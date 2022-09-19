@@ -5,6 +5,7 @@
 use tokio::net::{TcpStream};
 use tokio::io::{self, AsyncWriteExt, AsyncReadExt};
 use bytes::{Bytes, BytesMut};
+use log::trace;
 
 use crate::pop3::{POP3Response, POP3Command, err::POP3CommandErr};
 use POP3Command::*;
@@ -25,10 +26,10 @@ impl POP3Connection {
     /// Commence the interaction with the client.
     pub async fn begin(&mut self) -> Result<(), io::Error> {
         self.authenticate().await?;
-        println!("Authenticated");
+        trace!("POP3 connection authenticated");
 
         self.transaction().await?;
-        println!("Finished");
+        trace!("POP3 connection finished");
 
         Ok(())
     }
@@ -36,8 +37,6 @@ impl POP3Connection {
     /// Send a response or greeting to the client
     pub async fn send_response(&mut self, response: POP3Response) -> Result<(), io::Error> {
         let bytes = &Bytes::from(response)[..];
-        // Print the response
-        print!("{}", bytes.to_owned().into_iter().map(|b| b as char).collect::<String>());
         self.stream.write_all(bytes).await?;
 
         Ok(())
@@ -54,8 +53,7 @@ impl POP3Connection {
                 self.close().await?;
                 return Err(io::Error::from(io::ErrorKind::ConnectionAborted))
             }
-            println!("{:?}", self.buffer);
-    
+                
             match POP3Command::parse(self.buffer.clone().freeze()) {
                 Ok(command) => {
                     self.buffer.clear();

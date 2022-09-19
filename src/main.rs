@@ -1,4 +1,5 @@
 mod config;
+mod config_helpers;
 mod database;
 mod pop3;
 mod imf;
@@ -10,6 +11,7 @@ use pop3::{POP3Connection};
 use tokio::net::TcpListener;
 use database::user_database::*;
 use lazy_static::lazy_static;
+use log::{info, warn};
 
 lazy_static! {
     // Load the configuration into a global static variable
@@ -39,13 +41,15 @@ async fn main() {
 
     let handle = tokio::spawn(async move {
         loop {
-            let (socket, _) = pop3_listener.accept().await.unwrap();
+            let (socket, addr) = pop3_listener.accept().await.unwrap();
 
-            println!("Accepted POP3 connection");
+            info!("Accepted POP3 connection from {}", addr);
             let mut connection = POP3Connection::new(socket);
 
             if let Err(e) = connection.begin().await {
-                println!("POP3 Connection ended with error: {}", e)
+                warn!("POP3 connection with {} ended with error: {}", addr, e)
+            } else {
+                info!("POP3 connection with {} finished", addr);
             }
         }
     });
