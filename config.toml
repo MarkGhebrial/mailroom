@@ -1,3 +1,7 @@
+# Filepath for Log4rs config (relative to working directory). Omit field
+# to use same directory as the executable.
+log_4rs_config = "log4rs.yaml"
+
 [database]
 # Postgres username
 user = "mail"

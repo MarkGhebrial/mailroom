@@ -1,10 +1,24 @@
 use serde::Deserialize;
 use std::default::Default;
+use std::env::current_exe;
 
 #[derive(Deserialize)]
 pub struct Config {
+    #[serde(default = "default_log_4rs_config")]
+    pub log_4rs_config: String,
     pub database: DatabaseCfg,
     pub domains: Vec<DomainCfg>,
+}
+
+/// Looks for a file named "log4rs.yaml" same directory as the server
+/// executable
+fn default_log_4rs_config() -> String {
+    let mut dir = current_exe().unwrap();
+    dir.set_file_name("log4rs.yaml");
+    dir.as_path()
+        .to_str()
+        .unwrap()
+        .to_owned()
 }
 
 #[derive(Deserialize)]

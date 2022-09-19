@@ -5,7 +5,7 @@ mod imf;
 
 use crate::config::*;
 
-use std::{fs, env};
+use std::{fs, env, path::Path};
 use pop3::{POP3Connection};
 use tokio::net::TcpListener;
 use database::user_database::*;
@@ -28,6 +28,11 @@ lazy_static! {
 
 #[tokio::main]
 async fn main() {
+    log4rs::init_file(
+        Path::new(&CONFIG.log_4rs_config),
+        Default::default()
+    ).expect("Couldn't find/load Log4rs configuration file");
+
     initialize_db().await.unwrap();
 
     let pop3_listener = TcpListener::bind("192.168.0.138:110").await.unwrap();

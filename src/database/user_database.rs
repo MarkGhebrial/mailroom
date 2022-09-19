@@ -42,7 +42,7 @@ pub async fn initialize_db() -> Result<Client, tokio_postgres::Error> {
     Ok(client)
 }
 
-pub fn get_user(address: EmailAddress) -> Result<User, DbError> {
+pub async fn get_user(address: EmailAddress) -> Result<User, DbError> {
     Ok(User)
 }
 /*
