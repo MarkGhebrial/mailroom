@@ -1,7 +1,7 @@
-use bytes::{Bytes, BytesMut};
 use crate::pop3::err::{POP3CommandErr, ParseError};
-use POP3CommandErr::*;
+use bytes::{Bytes, BytesMut};
 use POP3Command::*;
+use POP3CommandErr::*;
 
 #[derive(PartialEq, Debug)]
 pub enum POP3Command {
@@ -31,13 +31,12 @@ pub enum POP3Command {
     /// `RSET`; Unmark all messages that have been marked as deleted.
     Reset,
 
-    /* 
-     * The above commands are required to be implemented by minimal POP3 
+    /*
+     * The above commands are required to be implemented by minimal POP3
      * implementations.
-     * 
+     *
      * The below commands are optional or extensions.
      */
-
     /// `CAPA`; List the extensions supported by this server.
     Capabilities,
 
@@ -73,14 +72,13 @@ impl TryFrom<Bytes> for POP3Command {
     /// Attempt to convert Bytes to a POP3Command. If the attempt fails,
     /// a POP3CommandErr will be returned.
     fn try_from(mut bytes: Bytes) -> Result<Self, Self::Error> {
-
         if bytes.len() < 2 {
             return Err(IncompleteResponse);
         }
 
         // Make sure the command ends with a CRLF pair
         if &bytes.slice(bytes.len() - 2..)[..] != b"\r\n" {
-            return Err(IncompleteResponse)
+            return Err(IncompleteResponse);
         }
         bytes.truncate(bytes.len() - 2);
 
@@ -91,7 +89,7 @@ impl TryFrom<Bytes> for POP3Command {
         for (i, c) in iter.enumerate() {
             if c == b' ' {
                 args.push(bytes.slice(last_space..i));
-                last_space = i+1;
+                last_space = i + 1;
             } else if i == bytes.len() - 1 {
                 args.push(bytes.slice(last_space..));
             }
@@ -108,42 +106,52 @@ impl TryFrom<Bytes> for POP3Command {
         // A closure to parse a numeric argument
         let numeric_arg = |index: usize| -> Result<usize, POP3CommandErr> {
             match args.get(index) {
-                Some(b) => {
-                    match bytes_to_uint(&b) {
-                        Ok(n) => return Ok(n),
-                        Err(_) => return Err(InvalidArguments)
-                    }
+                Some(b) => match bytes_to_uint(&b) {
+                    Ok(n) => return Ok(n),
+                    Err(_) => return Err(InvalidArguments),
                 },
-                None => return Err(InvalidArguments)
+                None => return Err(InvalidArguments),
             }
         };
-        
+
         let command = match args.get(0) {
             Some(s) => match &uppercase(&s)[..] {
                 b"QUIT" => Quit,
                 b"STAT" => Stat,
-                b"LIST" => List { message_number: numeric_arg(1).ok() },
-                b"RETR" => Retrieve { message_number: numeric_arg(1)? },
-                b"DELE" => Delete { message_number: numeric_arg(1)? },
+                b"LIST" => List {
+                    message_number: numeric_arg(1).ok(),
+                },
+                b"RETR" => Retrieve {
+                    message_number: numeric_arg(1)?,
+                },
+                b"DELE" => Delete {
+                    message_number: numeric_arg(1)?,
+                },
                 b"NOOP" => NoOp,
                 b"RSET" => Reset,
                 b"CAPA" => Capabilities,
-                b"TOP"  => Top {
+                b"TOP" => Top {
                     message_number: numeric_arg(1)?,
                     n: numeric_arg(2)?,
                 },
-                b"UIDL" => UniqueIDListing { message_number: numeric_arg(1).ok() },
-                b"USER" => Username { username: bytes_arg(1)? },
-                b"PASS" => Password { password: bytes_arg(1)? },
+                b"UIDL" => UniqueIDListing {
+                    message_number: numeric_arg(1).ok(),
+                },
+                b"USER" => Username {
+                    username: bytes_arg(1)?,
+                },
+                b"PASS" => Password {
+                    password: bytes_arg(1)?,
+                },
                 b"APOP" => APop {
                     username: bytes_arg(1)?,
                     md5_digest: bytes_arg(2)?,
                 },
-                _ => return Err(UnknownCommand(s.clone()))
+                _ => return Err(UnknownCommand(s.clone())),
             },
             None => return Err(InvalidSyntax),
         };
-        
+
         Ok(command)
     }
 }
@@ -151,7 +159,9 @@ impl TryFrom<Bytes> for POP3Command {
 /// Parse a Bytes into an unsigned integer. If it contains any non-numeric
 /// characters, a ParseError will be returned
 fn bytes_to_uint(bytes: &Bytes) -> Result<usize, ParseError> {
-    if bytes.len() == 0 { return Err(ParseError) }
+    if bytes.len() == 0 {
+        return Err(ParseError);
+    }
 
     let mut out: usize = 0;
 
@@ -193,26 +203,40 @@ fn parse_command() {
     );
     assert_eq!(
         POP3Command::try_from(Bytes::from("LIST 1\r\n")).unwrap(),
-        List { message_number: Some(1) }
+        List {
+            message_number: Some(1)
+        }
     );
     assert_eq!(
         POP3Command::try_from(Bytes::from("LIST \r\n")).unwrap(),
-        List { message_number: None }
+        List {
+            message_number: None
+        }
     );
     assert_eq!(
         POP3Command::try_from(Bytes::from("RETR 1234321\r\n")).unwrap(),
-        Retrieve { message_number: 1234321 }
+        Retrieve {
+            message_number: 1234321
+        }
     );
     assert_eq!(
         POP3Command::try_from(Bytes::from("TOP 5 10\r\n")).unwrap(),
-        Top { message_number: 5, n: 10 }
+        Top {
+            message_number: 5,
+            n: 10
+        }
     );
     assert_eq!(
         POP3Command::try_from(Bytes::from("usEr mghebrial\r\n")).unwrap(),
-        Username { username: "mghebrial".into() }
+        Username {
+            username: "mghebrial".into()
+        }
     );
     assert_eq!(
-        POP3Command::try_from(Bytes::from("APOP mrose c4c9334bac560ecc979e58001b3e22fb\r\n")).unwrap(),
+        POP3Command::try_from(Bytes::from(
+            "APOP mrose c4c9334bac560ecc979e58001b3e22fb\r\n"
+        ))
+        .unwrap(),
         APop {
             username: "mrose".into(),
             md5_digest: "c4c9334bac560ecc979e58001b3e22fb".into(),
@@ -226,9 +250,18 @@ fn uint_parse() {
     assert_eq!(bytes_to_uint(&Bytes::from("0")).unwrap(), 0);
     assert_eq!(bytes_to_uint(&Bytes::from("1127")).unwrap(), 1127);
     assert_eq!(bytes_to_uint(&Bytes::from("")).err().unwrap(), ParseError);
-    assert_eq!(bytes_to_uint(&Bytes::from("Hell0, w0r1d!")).err().unwrap(), ParseError);
-    assert_eq!(bytes_to_uint(&Bytes::from("-100")).err().unwrap(), ParseError);
-    assert_eq!(bytes_to_uint(&Bytes::from("+100")).err().unwrap(), ParseError);
+    assert_eq!(
+        bytes_to_uint(&Bytes::from("Hell0, w0r1d!")).err().unwrap(),
+        ParseError
+    );
+    assert_eq!(
+        bytes_to_uint(&Bytes::from("-100")).err().unwrap(),
+        ParseError
+    );
+    assert_eq!(
+        bytes_to_uint(&Bytes::from("+100")).err().unwrap(),
+        ParseError
+    );
 }
 
 #[test]

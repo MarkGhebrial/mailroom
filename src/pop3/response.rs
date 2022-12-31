@@ -1,12 +1,12 @@
-use bytes::{Bytes, BytesMut};
 use crate::pop3::err::POP3ResponseErr;
+use bytes::{Bytes, BytesMut};
 
 use POP3ResponseStatus::*;
 
 /// Represents the possible POP3 server status indicators
-/// 
+///
 /// POP3 servers reply with only two response codes: "+OK" and "-ERR"
-/// The "+OK" code is called the positive status indicator, and the 
+/// The "+OK" code is called the positive status indicator, and the
 /// "-ERR" code is called the negative status indicator.
 #[derive(PartialEq, Debug)]
 pub enum POP3ResponseStatus {
@@ -19,16 +19,13 @@ pub enum POP3ResponseStatus {
 #[derive(PartialEq, Debug)]
 pub struct POP3Response {
     pub status: POP3ResponseStatus,
-    pub message: Bytes
+    pub message: Bytes,
 }
 
 impl POP3Response {
     /// Create a new POP3Response
     pub fn new(status: POP3ResponseStatus, message: Bytes) -> Self {
-        Self {
-            status,
-            message
-        }
+        Self { status, message }
     }
 
     /// Create a positive POP3Response
@@ -45,7 +42,7 @@ impl POP3Response {
     pub fn parse_multiline(mut bytes: Bytes) -> Result<Self, POP3ResponseErr> {
         use POP3ResponseErr::*;
 
-        if bytes.len() >= 5 && bytes.slice(bytes.len()-5..) == "\r\n.\r\n" {
+        if bytes.len() >= 5 && bytes.slice(bytes.len() - 5..) == "\r\n.\r\n" {
             bytes.truncate(bytes.len() - 5);
         } else {
             return Err(IncompleteResponse);
@@ -70,9 +67,9 @@ impl POP3Response {
         }
 
         // Check that there is a space between the status and the message
-        if let Some(c) = bytes.get(msg_start-1) {
+        if let Some(c) = bytes.get(msg_start - 1) {
             if c != &b' ' {
-                return Err(InvalidSyntax)
+                return Err(InvalidSyntax);
             }
         }
 
@@ -85,7 +82,7 @@ impl POP3Response {
     pub fn parse_oneline(mut bytes: Bytes) -> Result<Self, POP3ResponseErr> {
         use POP3ResponseErr::*;
 
-        if bytes.len() >= 2 && bytes.slice(bytes.len()-2..) == "\r\n" {
+        if bytes.len() >= 2 && bytes.slice(bytes.len() - 2..) == "\r\n" {
             bytes.truncate(bytes.len() - 2);
         } else {
             return Err(IncompleteResponse);
@@ -110,9 +107,9 @@ impl POP3Response {
         }
 
         // Check that there is a space between the status and the message
-        if let Some(c) = bytes.get(msg_start-1) {
+        if let Some(c) = bytes.get(msg_start - 1) {
             if c != &b' ' {
-                return Err(InvalidSyntax)
+                return Err(InvalidSyntax);
             }
         }
 
@@ -154,10 +151,12 @@ impl From<POP3Response> for Bytes {
 
 /// Check if a Bytes contains a CRLF sequence ("\r\n")
 fn contains_crlf(bytes: &Bytes) -> bool {
-    if bytes.len() < 2 { return false; }
+    if bytes.len() < 2 {
+        return false;
+    }
 
-    for i in 0..bytes.len()-1 {
-        if bytes.slice(i..i+2) == "\r\n" {
+    for i in 0..bytes.len() - 1 {
+        if bytes.slice(i..i + 2) == "\r\n" {
             return true;
         }
     }
@@ -168,41 +167,50 @@ fn contains_crlf(bytes: &Bytes) -> bool {
 fn bytes_to_pop3_response() {
     // These should parse with no problem
     assert_eq!(
-        POP3Response::parse_oneline(Bytes::from("+OK\r\n")).unwrap(), 
+        POP3Response::parse_oneline(Bytes::from("+OK\r\n")).unwrap(),
         POP3Response::positive("")
     );
     assert_eq!(
-        POP3Response::parse_oneline(Bytes::from("-ERR\r\n")).unwrap(), 
+        POP3Response::parse_oneline(Bytes::from("-ERR\r\n")).unwrap(),
         POP3Response::negative("")
     );
     assert_eq!(
-        POP3Response::parse_oneline(Bytes::from("+OK Hello, world!\r\n")).unwrap(), 
+        POP3Response::parse_oneline(Bytes::from("+OK Hello, world!\r\n")).unwrap(),
         POP3Response::positive("Hello, world!")
     );
     assert_eq!(
         POP3Response::parse_multiline(Bytes::from(
             "+OK This\r\nis\r\na\r\nmulti.line\r\n.f\r\nmessage\r\n.\r\n"
-        )).unwrap(), 
+        ))
+        .unwrap(),
         POP3Response::positive("This\r\nis\r\na\r\nmulti.line\r\n.f\r\nmessage")
     );
 
     // These will not parse for syntactical reasons
     assert_eq!(
-        POP3Response::parse_oneline(Bytes::from("+ok\r\n")).err().unwrap(), 
+        POP3Response::parse_oneline(Bytes::from("+ok\r\n"))
+            .err()
+            .unwrap(),
         POP3ResponseErr::InvalidSyntax
     );
     assert_eq!(
-        POP3Response::parse_oneline(Bytes::from("-eRr\r\n")).err().unwrap(), 
+        POP3Response::parse_oneline(Bytes::from("-eRr\r\n"))
+            .err()
+            .unwrap(),
         POP3ResponseErr::InvalidSyntax
     );
     assert_eq!(
-        POP3Response::parse_oneline(Bytes::from("+OKHello, World\r\n")).err().unwrap(), 
+        POP3Response::parse_oneline(Bytes::from("+OKHello, World\r\n"))
+            .err()
+            .unwrap(),
         POP3ResponseErr::InvalidSyntax
     );
 
     // This will not parse because it excludes the termination sequence "CRLF.CRLF"
     assert_eq!(
-        POP3Response::parse_multiline(Bytes::from("+OK 2 messages\r\n1 200\r\n 2 200")).err().unwrap(), 
+        POP3Response::parse_multiline(Bytes::from("+OK 2 messages\r\n1 200\r\n 2 200"))
+            .err()
+            .unwrap(),
         POP3ResponseErr::IncompleteResponse
     );
 }

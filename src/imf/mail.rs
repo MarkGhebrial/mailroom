@@ -31,7 +31,7 @@ impl TryFrom<String> for Mail {
         // Split the headers and content
         let (header_str, content) = match string.split_once("\r\n\r\n") {
             Some(v) => v,
-            None => (string.trim(), "")
+            None => (string.trim(), ""),
         };
 
         let header_vec = unfold(header_str)?;
@@ -58,7 +58,7 @@ fn unfold(headers: &str) -> Result<Vec<String>, MailParseError> {
             // No leading whitespace was trimmed, therefore this is a new header
             out.push(line.to_owned())
         } else {
-            let index = &out.len()-1;
+            let index = &out.len() - 1;
             out.get_mut(index).ok_or(MailParseError)?.push_str(line);
         }
     }
@@ -78,7 +78,7 @@ fn mail_parse() {
         headers.insert(k.trim().to_owned(), v.trim().to_owned());
     };
 
-    insert("From","John Doe <jdoe@machine.example>");
+    insert("From", "John Doe <jdoe@machine.example>");
     insert("To", "Mary Smith <mary@example.net>");
     insert("Subject", "Saying Hello");
     insert("Date", "Fri, 21 Nov 1997 09:55:06 -0600");
@@ -86,12 +86,10 @@ fn mail_parse() {
 
     let expected = Mail::new(
         headers,
-        "This is a message just to say hello.\r\nSo, \"Hello\".".to_owned()
+        "This is a message just to say hello.\r\nSo, \"Hello\".".to_owned(),
     );
 
-    assert_eq!(
-        parsed, expected
-    );
+    assert_eq!(parsed, expected);
 }
 
 #[test]

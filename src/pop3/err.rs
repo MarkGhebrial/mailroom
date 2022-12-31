@@ -1,6 +1,6 @@
+use bytes::Bytes;
 use std::error::Error;
 use std::fmt;
-use bytes::Bytes;
 
 #[derive(PartialEq, Debug)]
 pub enum POP3ResponseErr {
@@ -43,7 +43,9 @@ impl fmt::Display for POP3CommandErr {
         let err_message = match self {
             InvalidSyntax => "POP3 client command syntax is invalid".to_string(),
             UnknownCommand(b) => format!("POP3 command '{:?}' is unknown or unsupported", &b[..]),
-            InvalidArguments => "POP3 client did not supply the required arguments for a command".to_string(),
+            InvalidArguments => {
+                "POP3 client did not supply the required arguments for a command".to_string()
+            }
             IncompleteResponse => "POP3 cient command is incomplete".to_string(),
         };
 

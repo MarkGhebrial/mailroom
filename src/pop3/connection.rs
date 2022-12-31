@@ -2,12 +2,12 @@
 //! every command from the client. Also responsible for sending responses
 //! from the server.
 
-use tokio::net::{TcpStream};
-use tokio::io::{self, AsyncWriteExt, AsyncReadExt};
 use bytes::{Bytes, BytesMut};
 use log::trace;
+use tokio::io::{self, AsyncReadExt, AsyncWriteExt};
+use tokio::net::TcpStream;
 
-use crate::pop3::{POP3Response, POP3Command, err::POP3CommandErr};
+use crate::pop3::{err::POP3CommandErr, POP3Command, POP3Response};
 use POP3Command::*;
 
 pub struct POP3Connection {
@@ -19,7 +19,7 @@ impl POP3Connection {
     pub fn new(socket: TcpStream) -> Self {
         Self {
             stream: socket,
-            buffer: BytesMut::new()
+            buffer: BytesMut::new(),
         }
     }
 
@@ -43,7 +43,7 @@ impl POP3Connection {
     }
 
     /// Read a POP3Command from the client.
-    /// 
+    ///
     /// If the client sends two commands in a row without the server
     /// calling this method, Things Will Break.
     pub async fn read_command(&mut self) -> Result<POP3Command, io::Error> {
@@ -51,19 +51,20 @@ impl POP3Connection {
             // Write the bytes from the client into the buffer
             if self.stream.read_buf(&mut self.buffer).await? == 0 {
                 self.close().await?;
-                return Err(io::Error::from(io::ErrorKind::ConnectionAborted))
+                return Err(io::Error::from(io::ErrorKind::ConnectionAborted));
             }
-                
+
             match POP3Command::parse(self.buffer.clone().freeze()) {
                 Ok(command) => {
                     self.buffer.clear();
                     return Ok(command);
-                },
+                }
                 Err(POP3CommandErr::IncompleteResponse) => (),
                 Err(POP3CommandErr::UnknownCommand(_)) => {
                     self.buffer.clear();
-                    self.send_response(POP3Response::negative("unknown command")).await?;
-                },
+                    self.send_response(POP3Response::negative("unknown command"))
+                        .await?;
+                }
                 Err(_) => self.buffer.clear(),
             };
         }
@@ -72,7 +73,8 @@ impl POP3Connection {
     // TODO: return authenticated user information
     pub async fn authenticate(&mut self) -> Result<(), io::Error> {
         // Greet the client
-        self.send_response(POP3Response::positive("good morning")).await?;
+        self.send_response(POP3Response::positive("good morning"))
+            .await?;
 
         loop {
             let command = self.read_command().await?;
@@ -83,23 +85,34 @@ impl POP3Connection {
                 Password { password: _ } => {
                     self.send_response(POP3Response::positive("")).await?;
                     return Ok(());
-                },
-                APop { username: _, md5_digest: _ } => {
+                }
+                APop {
+                    username: _,
+                    md5_digest: _,
+                } => {
                     self.send_response(POP3Response::positive("")).await?;
                     return Ok(());
                 }
                 Quit => {
                     self.close().await?;
                     return Ok(());
-                },
+                }
                 // TODO: Update CAPA list as more features are implemented
-                Capabilities => self.send_response(POP3Response::positive("\r\nUSER")).await?,
-                _ => self.send_response(POP3Response::negative("command not valid during authentication")).await?
+                Capabilities => {
+                    self.send_response(POP3Response::positive("\r\nUSER"))
+                        .await?
+                }
+                _ => {
+                    self.send_response(POP3Response::negative(
+                        "command not valid during authentication",
+                    ))
+                    .await?
+                }
             }
         }
     }
 
-    pub async fn transaction(&mut self/*, user: User*/) -> Result<(), io::Error> {
+    pub async fn transaction(&mut self /*, user: User*/) -> Result<(), io::Error> {
         loop {
             let command = self.read_command().await?;
 
@@ -114,13 +127,17 @@ impl POP3Connection {
                     // TODO: delete messages marked for deletion
                     self.close().await?;
                     return Ok(());
-                },
-                Top { message_number: _, n: _ } => POP3Response::negative("unsupported"),
+                }
+                Top {
+                    message_number: _,
+                    n: _,
+                } => POP3Response::negative("unsupported"),
                 UniqueIDListing { message_number: _ } => POP3Response::negative("unsupported"),
                 // TODO: Update CAPA list as more features are implemented
                 Capabilities => POP3Response::positive("\r\nUSER"),
                 _ => POP3Response::negative("command not valid during transaction"),
-            }).await?;
+            })
+            .await?;
         }
     }
 

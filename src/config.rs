@@ -15,10 +15,7 @@ pub struct Config {
 fn default_log_4rs_config() -> String {
     let mut dir = current_exe().unwrap();
     dir.set_file_name("log4rs.yaml");
-    dir.as_path()
-        .to_str()
-        .unwrap()
-        .to_owned()
+    dir.as_path().to_str().unwrap().to_owned()
 }
 
 #[derive(Deserialize)]

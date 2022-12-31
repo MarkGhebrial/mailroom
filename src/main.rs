@@ -1,17 +1,17 @@
 mod config;
 mod config_helpers;
 mod database;
-mod pop3;
 mod imf;
+mod pop3;
 
 use crate::config::*;
 
-use std::{fs, env, path::Path};
-use pop3::{POP3Connection};
-use tokio::net::TcpListener;
 use database::user_database::*;
 use lazy_static::lazy_static;
 use log::{info, warn};
+use pop3::POP3Connection;
+use std::{env, fs, path::Path};
+use tokio::net::TcpListener;
 
 lazy_static! {
     // Load the configuration into a global static variable
@@ -20,7 +20,7 @@ lazy_static! {
             .expect(
                 "No configuration file path specified. Ensure that the `CONFIG_PATH` environment variable is set"
             );
-    
+
         toml::from_str(
             fs::read_to_string(config_path)
             .expect("Couldn't find config file").as_str()
@@ -30,10 +30,8 @@ lazy_static! {
 
 #[tokio::main]
 async fn main() {
-    log4rs::init_file(
-        Path::new(&CONFIG.log_4rs_config),
-        Default::default()
-    ).expect("Couldn't find/load Log4rs configuration file");
+    log4rs::init_file(Path::new(&CONFIG.log_4rs_config), Default::default())
+        .expect("Couldn't find/load Log4rs configuration file");
 
     initialize_db().await.unwrap();
 

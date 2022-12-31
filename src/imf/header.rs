@@ -1,7 +1,7 @@
 /// Represents a header in an Internet Message Format message
 pub struct ImfHeader {
     pub name: HeaderName,
-    pub body: HeaderBody
+    pub body: HeaderBody,
 }
 
 /// Enumerates all the header names specified in RFC 5322
@@ -27,7 +27,7 @@ pub enum HeaderName {
     ResentBcc,
     ResentMessageID,
     ReturnPath,
-    Other(String)
+    Other(String),
 }
 
 impl From<&str> for HeaderName {
@@ -55,7 +55,7 @@ impl From<&str> for HeaderName {
             "Resent-Bcc" => ResentBcc,
             "Resent-Message-ID" => ResentMessageID,
             "Return-Path" => ReturnPath,
-            s => Other(s.to_owned())
+            s => Other(s.to_owned()),
         }
     }
 }
