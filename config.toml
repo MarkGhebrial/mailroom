@@ -3,10 +3,7 @@
 log_4rs_config = "log4rs.yaml"
 
 [database]
-# Postgres username
-user = "mail"
-# Postgres password
-password = "Login123" 
+url = "sqlite:./sqlite.db?mode=rwc"
 
 [[domains]]
 name = "localhost"

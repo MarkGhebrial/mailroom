@@ -2,3 +2,5 @@
 
 # Log4rs output
 /log
+
+sqlite.db

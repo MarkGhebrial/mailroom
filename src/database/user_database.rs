@@ -6,6 +6,7 @@ use argon2::{
 };
 use email_address::EmailAddress;
 use tokio_postgres::{Client, NoTls};
+use sea_orm::{Database, DbErr, DatabaseConnection, ConnectionTrait};
 
 use super::err::DbError;
 use super::user::User;
@@ -13,29 +14,15 @@ use crate::CONFIG;
 
 /// Start up the database, modifying it if the configuration has changed and
 /// creating it if it doesn't yet exist.
-pub async fn initialize_db() -> Result<Client, tokio_postgres::Error> {
-    // Initialize connection with PostgreSQL server
-    let (client, connection) = tokio_postgres::connect(
-        format!(
-            "host={} user={} password={}",
-            CONFIG.database.hostname, CONFIG.database.user, CONFIG.database.password
-        )
-        .as_str(),
-        NoTls,
-    )
-    .await?;
+pub async fn initialize_db() -> Result<DatabaseConnection, DbErr> {
+    // Initialize connection with sqlite
+    let db = Database::connect(&CONFIG.database.url).await?;
 
-    // The connection object performs the actual communication with the database,
-    // so let it do its own thing in a new task
-    tokio::spawn(async move {
-        if let Err(e) = connection.await {
-            eprintln!("connection error: {}", e);
-        }
-    });
+    // No extra initialization is needed for sqlite
+    // TODO: support other databases
+    // https://www.sea-ql.org/sea-orm-tutorial/ch01-01-project-setup.html
 
-    //client.query(statement, params)
-
-    Ok(client)
+    Ok(db)
 }
 
 pub async fn get_user(address: EmailAddress) -> Result<User, DbError> {

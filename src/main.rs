@@ -35,7 +35,7 @@ async fn main() {
 
     initialize_db().await.unwrap();
 
-    let pop3_listener = TcpListener::bind("192.168.0.138:110").await.unwrap();
+    let pop3_listener = TcpListener::bind("localhost:110").await.unwrap();
 
     let handle = tokio::spawn(async move {
         loop {

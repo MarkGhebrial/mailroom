@@ -10,8 +10,8 @@ pub struct Config {
     pub domains: Vec<DomainCfg>,
 }
 
-/// Looks for a file named "log4rs.yaml" same directory as the server
-/// executable
+/// Looks for a file named "log4rs.yaml" in the same directory as the
+/// server executable
 fn default_log_4rs_config() -> String {
     let mut dir = current_exe().unwrap();
     dir.set_file_name("log4rs.yaml");
@@ -19,7 +19,7 @@ fn default_log_4rs_config() -> String {
 }
 
 #[derive(Deserialize)]
-pub struct DatabaseCfg {
+pub struct PostgresCfg {
     /// PostgreSQL server hostname
     #[serde(default = "default_postgres_host")]
     pub hostname: String,
@@ -27,6 +27,12 @@ pub struct DatabaseCfg {
     pub user: String,
     /// PostgreSQL password (for specified user)
     pub password: String,
+}
+
+#[derive(Deserialize)]
+pub struct DatabaseCfg {
+    /// Database URL
+    pub url: String,
 }
 
 fn default_postgres_host() -> String {
