@@ -13,11 +13,11 @@ impl MigrationTrait for Migration {
                     .if_not_exists()
                     .col(
                         ColumnDef::new(User::EmailAddress)
-                            .string()
+                            .text()
                             .not_null()
                             .primary_key(),
                     )
-                    .col(ColumnDef::new(User::Password).string().not_null())
+                    .col(ColumnDef::new(User::Password).text().not_null())
                     .to_owned(),
             )
             .await

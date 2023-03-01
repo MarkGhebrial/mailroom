@@ -23,7 +23,7 @@ lazy_static! {
         let config_path = match env::var("CONFIG_PATH") {
             Ok(path) => path,
             Err(_) => {
-                // Look for the file in the same working director as the executable
+                // Look for the file in the same working directory as the executable
                 let mut path = current_exe().unwrap();
                 path.set_file_name("config.toml");
                 path.as_path().to_str().unwrap().to_owned()

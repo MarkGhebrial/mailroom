@@ -1,8 +1,9 @@
-pub mod err;
+//pub mod err;
 
 mod mailbox;
 pub use crate::database::mailbox::*;
 
-pub mod user_database;
+mod models;
+use models::{prelude::*, *};
 
-pub mod user;
+pub mod user_database;

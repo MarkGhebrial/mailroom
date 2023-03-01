@@ -10,7 +10,7 @@ impl MigratorTrait for Migrator {
     fn migrations() -> Vec<Box<dyn MigrationTrait>> {
         vec![
             Box::new(m20220101_000001_create_user_table::Migration),
-            //Box::new(m20230228_234019_create_mail_table::Migration),
+            Box::new(m20230228_234019_create_mail_table::Migration),
         ]
     }
 }
