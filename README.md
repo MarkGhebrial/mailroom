@@ -21,6 +21,14 @@ This is very much a work in progress and is currently lacking most basic functio
 - SMTP support
 - IMAP support
 
+# Setup
+
+Set an environment variable called `CONFIG_PATH` to the path of `config.toml`
+
+## Migration
+
+Run `DATABASE_URL=sqlite://sqlite.db sea-orm-cli migrate refresh`
+
 # License
 
 Mailroom - A mail server written in Rust

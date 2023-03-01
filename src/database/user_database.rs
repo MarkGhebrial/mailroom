@@ -5,8 +5,8 @@ use argon2::{
     Argon2,
 };
 use email_address::EmailAddress;
+use sea_orm::{ConnectionTrait, Database, DatabaseConnection, DbErr};
 use tokio_postgres::{Client, NoTls};
-use sea_orm::{Database, DbErr, DatabaseConnection, ConnectionTrait};
 
 use super::err::DbError;
 use super::user::User;
