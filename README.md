@@ -2,7 +2,7 @@
 
 An email server written in pure Rust.
 
-This is very much a work in progress and is currently lacking most basic functionality.
+This is very much a work in progress and is nowhere near completion.
 
 ## What works (not necessarily stable or complete!):
 - My implementation of the POP3 *protocol*
@@ -14,8 +14,12 @@ This is very much a work in progress and is currently lacking most basic functio
    - Parsed with serde, then stored in a global static variable
 - Logging with Log4rs
 
+## What I'm working on:
+- A database to store user information and emails
+   - Switching to SQLite from Postgres for ease of use.
+   - Using [sea-orm](https://www.sea-ql.org/SeaORM/) as the ORM.
+
 ## What's missing / To do (in order of priority):
-- A database to store emails in (kinda important!)
 - TLS support
    - Automatically get certificates from Let's Encrypt?
 - SMTP support
@@ -23,17 +27,21 @@ This is very much a work in progress and is currently lacking most basic functio
 
 # Setup
 
-Set an environment variable called `CONFIG_PATH` to the path of `config.toml`
+(optional) Set an environment variable called `CONFIG_PATH` to the path of `config.toml`.
 
 ## Migration
 
 Run `DATABASE_URL=sqlite://sqlite.db sea-orm-cli migrate refresh`
 
+## Generate models
+
+`sea-orm-cli generate entity -u sqlite://sqlite.db -o src/database/models`
+
 # License
 
 Mailroom - A mail server written in Rust
 
-Copyright (C) 2022 Mark Ghebrial
+Copyright (C) 2023 Mark Ghebrial
 
 This program is free software: you can redistribute it and/or modify it under the terms of the GNU General Public License as published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version.
 
