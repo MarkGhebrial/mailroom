@@ -59,7 +59,7 @@ pub async fn initialize_db() -> Result<DatabaseConnection, DbErr> {
 
 /// Look up a user in the database. If the user is not found, return
 /// `None`
-pub async fn get_user(address: EmailAddress) -> Result<Option<user::Model>, DbErr> {
+pub async fn get_user(address: &EmailAddress) -> Result<Option<user::Model>, DbErr> {
     let db = db_connection().await?;
 
     let user = User::find_by_id(address.to_string()).one(&db).await?;
@@ -70,8 +70,8 @@ pub async fn get_user(address: EmailAddress) -> Result<Option<user::Model>, DbEr
 /// correct. If the user does not exist or the password is wrong, `None`
 /// is returned
 pub async fn authenticate_user(
-    address: EmailAddress,
-    password: String,
+    address: &EmailAddress,
+    password: &str,
 ) -> Result<Option<user::Model>, DbErr> {
     // Look up the user
     let user = get_user(address).await?;

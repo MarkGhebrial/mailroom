@@ -2,7 +2,11 @@
 //! every command from the client. Also responsible for sending responses
 //! from the server.
 
+use std::error::Error;
+use std::str::{self, FromStr};
+
 use bytes::{Bytes, BytesMut};
+use email_address::EmailAddress;
 use log::trace;
 use tokio::io::{self, AsyncReadExt, AsyncWriteExt};
 use tokio::net::TcpStream;
@@ -10,9 +14,13 @@ use tokio::net::TcpStream;
 use crate::pop3::{err::POP3CommandErr, POP3Command, POP3Response};
 use POP3Command::*;
 
+use crate::database::*;
+
 pub struct POP3Connection {
     stream: TcpStream,
     buffer: BytesMut,
+    username: Option<EmailAddress>,
+    user: Option<user::Model>,
 }
 
 impl POP3Connection {
@@ -20,11 +28,13 @@ impl POP3Connection {
         Self {
             stream: socket,
             buffer: BytesMut::new(),
+            username: None,
+            user: None,
         }
     }
 
     /// Commence the interaction with the client.
-    pub async fn begin(&mut self) -> Result<(), io::Error> {
+    pub async fn begin(&mut self) -> Result<(), Box<dyn Error>> {
         self.authenticate().await?;
         trace!("POP3 connection authenticated");
 
@@ -71,20 +81,42 @@ impl POP3Connection {
     }
 
     // TODO: return authenticated user information
-    pub async fn authenticate(&mut self) -> Result<(), io::Error> {
+    pub async fn authenticate(&mut self) -> Result<(), Box<dyn Error>> {
         // Greet the client
-        self.send_response(POP3Response::positive("good morning"))
-            .await?;
+        self.send_response(POP3Response::positive("hello")).await?;
 
         loop {
             let command = self.read_command().await?;
 
             // Handle the commands valid in the authentication state
             match command {
-                Username { username: _ } => self.send_response(POP3Response::positive("")).await?,
-                Password { password: _ } => {
-                    self.send_response(POP3Response::positive("")).await?;
-                    return Ok(());
+                Username { username } => {
+                    // Parse the bytes into a string and remember them
+                    self.username = match str::from_utf8(&username) {
+                        Ok(s) => EmailAddress::from_str(s).ok(),
+                        Err(_) => None,
+                    };
+                    self.send_response(POP3Response::positive("")).await?
+                }
+                Password { password } => {
+                    if let Ok(password) = str::from_utf8(&password) {
+                        // Check the username and password combination
+                        self.user = user_database::authenticate_user(
+                            &self.username.as_ref().unwrap(),
+                            password,
+                        )
+                        .await?;
+
+                        // User is authenticated, so exit the authentication phase
+                        if self.user.is_some() {
+                            self.send_response(POP3Response::positive("Authenticated"))
+                                .await?;
+                            return Ok(());
+                        }
+                    }
+
+                    self.send_response(POP3Response::negative("Username or password is not valid"))
+                        .await?;
                 }
                 APop {
                     username: _,
@@ -112,7 +144,7 @@ impl POP3Connection {
         }
     }
 
-    pub async fn transaction(&mut self /*, user: User*/) -> Result<(), io::Error> {
+    pub async fn transaction(&mut self) -> Result<(), io::Error> {
         loop {
             let command = self.read_command().await?;
 
