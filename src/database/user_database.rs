@@ -13,11 +13,15 @@ use super::*;
 use crate::config_helpers::get_all_addresses;
 use crate::CONFIG;
 
+pub async fn db_connection() -> Result<DatabaseConnection, DbErr> {
+    Database::connect(&CONFIG.database.url).await
+}
+
 /// Start up the database, modifying it if the configuration has changed and
 /// creating it if it doesn't yet exist.
 pub async fn initialize_db() -> Result<DatabaseConnection, DbErr> {
     // Initialize connection with sqlite
-    let db = Database::connect(&CONFIG.database.url).await?;
+    let db = db_connection().await?;
 
     // No extra initialization is needed for sqlite
     // TODO: support other databases
@@ -53,15 +57,39 @@ pub async fn initialize_db() -> Result<DatabaseConnection, DbErr> {
     Ok(db)
 }
 
-pub async fn get_user(address: EmailAddress) -> Option<User> {
-    None
+/// Look up a user in the database. If the user is not found, return
+/// `None`
+pub async fn get_user(address: EmailAddress) -> Result<Option<user::Model>, DbErr> {
+    let db = db_connection().await?;
+
+    let user = User::find_by_id(address.to_string()).one(&db).await?;
+    Ok(user)
 }
-/*
-pub fn authenticate_user(address: EmailAddress, password: String) -> Result<User, DbError> {
-    // Load hashed password from DB
-        // If it doesn't exist, hash the password and save that
+
+/// Look up user up in the database and check that that `password` is
+/// correct. If the user does not exist or the password is wrong, `None`
+/// is returned
+pub async fn authenticate_user(
+    address: EmailAddress,
+    password: String,
+) -> Result<Option<user::Model>, DbErr> {
+    // Look up the user
+    let user = get_user(address).await?;
+    let hashed_password = match &user {
+        Some(model) => &model.password,
+        None => return Ok(None),
+    };
+
+    let parsed_hash = PasswordHash::new(&hashed_password)
+        .expect(&format!("Invalid password hash: {}", hashed_password));
 
     // Verify that the password matches
-    Argon2::default().verify_password(password.as_bytes(), &parsed_hash).is_ok();
-
-}*/
+    if Argon2::default()
+        .verify_password(password.as_bytes(), &parsed_hash)
+        .is_ok()
+    {
+        Ok(Some(user.unwrap())) // Unrapping is OK here because we checked earlier that user is `Some`
+    } else {
+        Ok(None)
+    }
+}
