@@ -3,6 +3,7 @@ mod config_helpers;
 mod database;
 mod imf;
 mod pop3;
+mod smtp;
 
 use crate::config::*;
 
