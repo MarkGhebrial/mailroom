@@ -18,6 +18,9 @@ use std::{
 };
 use tokio::net::TcpListener;
 
+use trust_dns_resolver::config::*;
+use trust_dns_resolver::{TokioAsyncResolver, TokioHandle};
+
 lazy_static! {
     // Load the configuration into a global static variable
     static ref CONFIG: Config = {
@@ -45,7 +48,20 @@ async fn main() {
 
     initialize_db().await.unwrap();
 
-    let pop3_listener = TcpListener::bind("127.0.0.1:110").await.unwrap();
+    let dns_resolver = TokioAsyncResolver::new(
+        ResolverConfig::default(),
+        ResolverOpts::default(),
+        TokioHandle,
+    )
+    .unwrap();
+
+    let response = dns_resolver.mx_lookup("gmail.com").await.unwrap();
+    for addr in response.iter() {
+        warn!("{:?}", addr);
+    }
+    warn!("Done printing mx record");
+
+    let pop3_listener = TcpListener::bind("0.0.0.0:110").await.unwrap();
 
     let handle = tokio::spawn(async move {
         loop {
