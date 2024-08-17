@@ -12,3 +12,13 @@ users = [
     "limy"
 ]
 tls_settings = "disabled"
+
+[[domains]]
+name = "ghebrial.net"
+selector = "mail" # The thing that goes in front of the actual email domain. The "mail_server1" part of "mail_server1.ghebrial.net"
+users = [
+    "mark",
+    "darth.mark",
+    "supermark"
+]
+tls_settings = "disabled"

@@ -1,8 +1,8 @@
 use tokio::io::{self, AsyncReadExt, AsyncWriteExt};
 use tokio::net::TcpStream;
 
-use crate::imf::Mail;
 use super::reply::*;
+use crate::imf::Mail;
 
 /// Handles an outgoing SMTP connection for sending email to another
 /// domain.
