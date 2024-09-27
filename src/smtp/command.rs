@@ -3,6 +3,7 @@ use std::str::FromStr;
 
 use bytes::Bytes;
 use email_address::EmailAddress;
+use sea_orm::strum::Display;
 
 pub enum SMTPCommand {
     // TODO: source routes
@@ -56,7 +57,7 @@ pub enum SMTPCommand {
     Quit,
 }
 
-#[derive(PartialEq, Debug)]
+#[derive(PartialEq, Debug, Display)]
 pub enum SMTPCommandParseError {
     IncompleteCommand,
     InvalidArguments,

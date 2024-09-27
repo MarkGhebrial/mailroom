@@ -34,7 +34,7 @@ impl IncomingSMTPConnection {
             }
         }
 
-        Ok(SMTPCommand::Data)
+        Ok(SMTPCommand::Noop)
     }
 
     /// Close the connection
