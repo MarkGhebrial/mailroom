@@ -1,6 +1,9 @@
 mod command;
 pub use command::*;
 
+mod err;
+pub use err::*;
+
 mod incoming_connection;
 pub use incoming_connection::*;
 

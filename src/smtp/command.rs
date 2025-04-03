@@ -1,7 +1,6 @@
 use std::error::Error;
 use std::str::FromStr;
 
-use bytes::Bytes;
 use email_address::EmailAddress;
 use sea_orm::strum::Display;
 
@@ -66,6 +65,8 @@ pub enum SMTPCommandParseError {
 
 impl Error for SMTPCommandParseError {}
 
+/// Try to convert a string to an `SMTPCommand`. Fails if the string
+/// is not an SMTP command.
 impl TryFrom<&str> for SMTPCommand {
     type Error = SMTPCommandParseError;
 
@@ -113,7 +114,5 @@ impl TryFrom<&str> for SMTPCommand {
                 _ => return Err(SMTPCommandParseError::InvalidCommand),
             },
         }
-
-        panic!("Send Help");
     }
 }
