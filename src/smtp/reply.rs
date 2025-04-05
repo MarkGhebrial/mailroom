@@ -1,5 +1,4 @@
-use super::SMTPCommandParseError;
-
+use crate::smtp::{reply, SMTPReplyParseError};
 
 /// Represents an SMTP reply. See Section 4.2 of [RFC 5321](https://datatracker.ietf.org/doc/html/rfc5321#section-4.2)
 pub struct SMTPReply {
@@ -9,26 +8,75 @@ pub struct SMTPReply {
     text: String,
 }
 
-impl<T> TryFrom<T> for SMTPReply where T: &str {
-    type Error = SMTPCommandParseError;
+impl TryFrom<&str> for SMTPReply {
+    type Error = SMTPReplyParseError;
 
-    fn try_from(value: T) -> Result<Self, Self::Error> {
-        todo!()
+    fn try_from(s: &str) -> Result<Self, Self::Error> {
+        use SMTPReplyParseError::*;
+
+        // Single line SMTP replies are in the form
+        // "xxx words words words\r\n"
+        //
+        // Single line replies can also be of the form
+        // "xxx\r\n"
+        // Notice that there's no " " after the reply code.
+        //
+        // Multi line SMTP replies are in the form
+        // "xxx-words words words\r\n
+        // xxx-words words words\r\n
+        // xxx words words words\r\n"
+
+        let mut reply_code: Option<SMTPReplyCode> = None;
+        let reply_text = String::new();
+
+        let lines: Vec<&str> = s.split("\r\n").collect();
+        for line in lines {
+            // Split the line into two parts, the code, and the text.
+            // Return an error if the line is shorter than three characters
+            // (the length of the code).
+            let (code, text) = line.split_at_checked(3).ok_or(InvalidSyntax)?;
+
+            match separator {
+                None | Some(' ') => {
+                    // Handle the single line case
+                }
+                Some('-') => {
+                    // Handle the multiline case
+                }
+                Some(separator) => return Err(InvalidSeparator(separator)),
+            }
+
+            match &reply_code {
+                None => reply_code = Some(code.try_into()?),
+                // Make sure the reply code on this line is the same as the reply codes on previous lines
+                Some(reply_code) => {
+                    if reply_code != &code.try_into()? {
+                        return Err(InvalidSyntax);
+                    }
+                }
+            }
+        }
+
+        Ok(Self {
+            code: reply_code.unwrap(), // TODO: Eliminate this unwrap
+            text: reply_text,
+        })
     }
 }
 
 /// Represents the three digit code in SMTP replies.
-/// 
+///
 /// 2yz codes indicate positive completion (i.e. the request completed sucessfully)
-/// 
+///
 /// 3yz codes indicate positive intermediate (i.e. the request is pending further information)
-/// 
+///
 /// 4zy codes indicate transient failure (i.e. the request failed but can be reattempted)
-/// 
+///
 /// 5zy codes indicate permanent failure (i.e. the client should not reattempt the request)
-/// 
-/// The doc comments for each type in this enum are the suggested reply text specfied in Section 4.4.2 of 
-/// [RFC 5321](https://datatracker.ietf.org/doc/html/rfc5321#section-4.2.2) 
+///
+/// The doc comments for each type in this enum are the suggested reply text specfied in Section 4.4.2 of
+/// [RFC 5321](https://datatracker.ietf.org/doc/html/rfc5321#section-4.2.2)
+#[derive(PartialEq)]
 pub enum SMTPReplyCode {
     /// Syntax error, command unrecognized (This may include errors such
     /// as command line too long)
@@ -111,4 +159,25 @@ pub enum SMTPReplyCode {
     /// Transaction failed (Or, in the case of a connection-opening
     /// response, "No SMTP service here")
     Code554 = 554,
+}
+
+impl TryFrom<usize> for SMTPReplyCode {
+    type Error = SMTPReplyParseError;
+
+    fn try_from(value: usize) -> Result<Self, Self::Error> {
+        todo!()
+    }
+}
+
+impl TryFrom<&str> for SMTPReplyCode {
+    type Error = SMTPReplyParseError;
+
+    fn try_from(value: &str) -> Result<Self, Self::Error> {
+        let c = match value.parse::<usize>() {
+            Ok(c) => c,
+            Err(_) => return Err(SMTPReplyParseError::InvalidSyntax),
+        };
+
+        Self::try_from(c)
+    }
 }
