@@ -4,7 +4,7 @@ An email server written in pure Rust.
 
 This is very much a work in progress and is nowhere near completion.
 
-Mailroom aims to be the simplest way to host <10 email accounts on a homelab server, not an enterprise-grade email solution. Everything should be self contained and simple, and setup should take less than 30 minutes.
+Mailroom aims to be the simplest way to host a small number of email accounts on a home server. It's not intended to be an enterprise-grade email solution. Everything should be self contained and simple, and setup should take less than 30 minutes.
 
 ## What works (not necessarily stable or complete!):
 - POP3
