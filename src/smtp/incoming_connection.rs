@@ -4,7 +4,7 @@ use tokio::{io::AsyncReadExt, net::TcpStream};
 
 use super::SMTPCommand;
 
-/// Handles an incoming SMTP connection from another email server or a 
+/// Handles an incoming SMTP connection from another email server or an email client.
 pub struct IncomingSMTPConnection {
     // Socket state
     stream: TcpStream,

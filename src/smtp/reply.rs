@@ -16,45 +16,69 @@ impl TryFrom<&str> for SMTPReply {
 
         // Single line SMTP replies are in the form
         // "xxx words words words\r\n"
+        // where "xxx" is the reply code
         //
         // Single line replies can also be of the form
         // "xxx\r\n"
-        // Notice that there's no " " after the reply code.
+        // Notice that there does not need to be a " " after the reply code.
         //
         // Multi line SMTP replies are in the form
         // "xxx-words words words\r\n
         // xxx-words words words\r\n
         // xxx words words words\r\n"
+        // Notice the dashes between the reply codes and the line
+
+        // TODO: Check that the response has a trailing CRLF. If not, return an incomplete response error.
 
         let mut reply_code: Option<SMTPReplyCode> = None;
-        let reply_text = String::new();
+        let mut reply_text = String::new();
+
+        // let mut last_line_has_been_seen = false;
+        let mut number_of_lines_parsed = 0;
 
         let lines: Vec<&str> = s.split("\r\n").collect();
-        for line in lines {
-            // Split the line into two parts, the code, and the text.
-            // Return an error if the line is shorter than three characters
-            // (the length of the code).
-            let (code, text) = line.split_at_checked(3).ok_or(InvalidSyntax)?;
+        for line in lines.iter() {
+            number_of_lines_parsed += 1;
 
-            match separator {
-                None | Some(' ') => {
-                    // Handle the single line case
-                }
-                Some('-') => {
-                    // Handle the multiline case
-                }
-                Some(separator) => return Err(InvalidSeparator(separator)),
-            }
+            let code = line.get(..3).ok_or(InvalidSyntax)?;
+            let separator = line.as_bytes().get(3);
+            let text = line.get(4..);
 
             match &reply_code {
                 None => reply_code = Some(code.try_into()?),
                 // Make sure the reply code on this line is the same as the reply codes on previous lines
                 Some(reply_code) => {
                     if reply_code != &code.try_into()? {
-                        return Err(InvalidSyntax);
+                        return Err(InvalidMultilineResponse);
                     }
                 }
             }
+
+            // Append the text on the current SMTP response line to the return string
+            if let Some(s) = text {
+                reply_text.push_str(s);
+                reply_text.push_str("\r\n");
+            }
+
+            match separator {
+                None | Some(b' ') => {
+                    // A space between the code and the text means that this line is the last one, so we break the loop
+                    break;
+                }
+                Some(b'-') => {
+                    // If this is the last line, and the separator is '-'...
+                    if number_of_lines_parsed == lines.len() {
+                        // ... then the response is incomplete
+                        return Err(IncompleteResponse);
+                    }
+                }
+                Some(separator) => return Err(InvalidSeparator(*separator as char)),
+            }
+        }
+
+        // If we didn't look at all the lines before finding one with a " " separator, then the response is invalid.
+        if number_of_lines_parsed < lines.len() {
+            return Err(InvalidMultilineResponse)
         }
 
         Ok(Self {
