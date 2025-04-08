@@ -1,13 +1,16 @@
-# Mailroom
+# mailroom
 
 An email server written in pure Rust.
 
 This is very much a work in progress and is nowhere near completion.
 
+Mailroom aims to be the simplest way to host <10 email accounts on a homelab server, not an enterprise-grade email solution. Everything should be self contained and simple, and setup should take less than 30 minutes.
+
 ## What works (not necessarily stable or complete!):
-- My implementation of the POP3 *protocol*
-   - Can fool email clients into showing a message in the user's inbox.
-      - Tested with Mozilla Thunderbird.
+- POP3
+   - Tested with Mozilla Thunderbird.
+   - Since mailroom doesn't yet have any form of mailbox system, every POP3 message retrieval returns a hardcoded test message.
+   - Actions such as message deletion do not do anything, but user authentication with a simple password works.
    - Doesn't currently work with TLS or STARTTLS.
    - **Very** minimal; missing a lot of features
 - The configuration file
@@ -15,6 +18,8 @@ This is very much a work in progress and is nowhere near completion.
 - Logging with Log4rs
 
 ## What I'm working on:
+- SMTP support
+   - This is kinda important if mailroom is actually supposed to work as an email server lol.
 - A database to store user information and emails
    - Switching to SQLite from Postgres for ease of use.
    - Using [sea-orm](https://www.sea-ql.org/SeaORM/) as the ORM.
@@ -22,10 +27,12 @@ This is very much a work in progress and is nowhere near completion.
 ## What's missing / To do (in order of priority):
 - TLS support
    - Automatically get certificates from Let's Encrypt?
-- SMTP support
+- DKIM support for signing outgoing emails.
+- Automatic SPF record generation?
 - IMAP support
+- Verification of incoming emails via DKIM and SPF.
 
-## Things to look into
+## Notes for my future self
 - DKIM
    - Verifies the authenticity of incoming emails with a hash and digital signature.
    - Mailroom should generate a DKIM signature for outgoing emails and verify the signatures of incoming ones.
