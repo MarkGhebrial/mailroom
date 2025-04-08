@@ -17,8 +17,11 @@ use POP3Command::*;
 use crate::database::*;
 
 pub struct POP3Connection {
+    // Socket state
     stream: TcpStream,
     buffer: BytesMut,
+
+    // Connection state
     username: Option<EmailAddress>,
     user: Option<user::Model>,
 }
@@ -35,7 +38,11 @@ impl POP3Connection {
 
     /// Commence the interaction with the client.
     pub async fn begin(&mut self) -> Result<(), Box<dyn Error>> {
-        self.authenticate().await?;
+        let authenticated: bool = self.authenticate().await?;
+        if !authenticated {
+            trace!("POP3 connection failed to authenticate");
+            return Ok(());
+        }
         trace!("POP3 connection authenticated");
 
         self.transaction().await?;
@@ -81,7 +88,7 @@ impl POP3Connection {
     }
 
     // TODO: return authenticated user information
-    pub async fn authenticate(&mut self) -> Result<(), Box<dyn Error>> {
+    pub async fn authenticate(&mut self) -> Result<bool, Box<dyn Error>> {
         // Greet the client
         self.send_response(POP3Response::positive("hello")).await?;
 
@@ -111,7 +118,7 @@ impl POP3Connection {
                         if self.user.is_some() {
                             self.send_response(POP3Response::positive("Authenticated"))
                                 .await?;
-                            return Ok(());
+                            return Ok(true);
                         }
                     }
 
@@ -123,11 +130,11 @@ impl POP3Connection {
                     md5_digest: _,
                 } => {
                     self.send_response(POP3Response::positive("")).await?;
-                    return Ok(());
+                    return Ok(false);
                 }
                 Quit => {
                     self.close().await?;
-                    return Ok(());
+                    return Ok(false);
                 }
                 // TODO: Update CAPA list as more features are implemented
                 Capabilities => {

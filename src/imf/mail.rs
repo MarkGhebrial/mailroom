@@ -4,8 +4,8 @@ use std::collections::HashMap;
 /// Represents an email message.
 #[derive(PartialEq, Debug)]
 pub struct Mail {
-    headers: HashMap<String, String>,
-    content: String,
+    pub headers: HashMap<String, String>,
+    pub content: String,
 }
 
 impl Mail {
@@ -13,6 +13,7 @@ impl Mail {
         Self { headers, content }
     }
 
+    // TODO: Maybe just make content public?
     pub fn content(&self) -> String {
         self.content.clone()
     }
@@ -20,6 +21,12 @@ impl Mail {
     /// Return the length of the message in octets.
     pub fn content_len(&self) -> usize {
         self.content.len()
+    }
+
+    /// Check the validity of the message's DKIM signature. Returns false
+    /// if the signature is invalid or missing.
+    pub fn verify_dkim_signature() -> bool {
+        todo!()
     }
 }
 
