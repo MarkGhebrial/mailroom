@@ -33,7 +33,6 @@ impl TryFrom<&str> for SMTPReply {
         let mut reply_code: Option<SMTPReplyCode> = None;
         let mut reply_text = String::new();
 
-        // let mut last_line_has_been_seen = false;
         let mut number_of_lines_parsed = 0;
 
         let lines: Vec<&str> = s.split("\r\n").collect();
@@ -78,7 +77,7 @@ impl TryFrom<&str> for SMTPReply {
 
         // If we didn't look at all the lines before finding one with a " " separator, then the response is invalid.
         if number_of_lines_parsed < lines.len() {
-            return Err(InvalidMultilineResponse)
+            return Err(InvalidMultilineResponse);
         }
 
         Ok(Self {
@@ -89,8 +88,9 @@ impl TryFrom<&str> for SMTPReply {
 }
 
 /// Represents the three digit code in SMTP replies.
+/// The u16 member holds the last two digits of the code.
 ///
-/// 2yz codes indicate positive completion (i.e. the request completed sucessfully)
+/// 2yz codes indicate positive completion (i.e. the request completed successfully)
 ///
 /// 3yz codes indicate positive intermediate (i.e. the request is pending further information)
 ///
@@ -98,98 +98,36 @@ impl TryFrom<&str> for SMTPReply {
 ///
 /// 5zy codes indicate permanent failure (i.e. the client should not reattempt the request)
 ///
-/// The doc comments for each type in this enum are the suggested reply text specfied in Section 4.4.2 of
+/// The suggested reply texts for each reply code are specfied in Section 4.4.2 of
 /// [RFC 5321](https://datatracker.ietf.org/doc/html/rfc5321#section-4.2.2)
-#[derive(PartialEq)]
+#[derive(PartialEq, Debug)]
 pub enum SMTPReplyCode {
-    /// Syntax error, command unrecognized (This may include errors such
-    /// as command line too long)
-    Code500 = 500,
+    /// Indicates positive completion (i.e. the request completed successfully)
+    TwoHundredCode(u16),
 
-    /// Syntax error in parameters or arguments
-    Code501 = 501,
+    /// Indicates positive intermediate (i.e. the request is pending further information)
+    ThreeHundredCode(u16),
 
-    /// Command not implemented (see Section 4.2.4)
-    Code502 = 502,
+    /// Indicates transient failure (i.e. the request failed but can be reattempted)
+    FourHundredCode(u16),
 
-    /// Bad sequence of commands
-    Code503 = 503,
-
-    /// Command parameter not implemented
-    Code504 = 504,
-
-    /// System status, or system help reply
-    Code211 = 211,
-
-    /// Help message (Information on how to use the receiver or the
-    /// meaning of a particular non-standard command; this reply is useful
-    /// only to the human user)
-    Code214 = 214,
-
-    /// <domain> Service ready
-    Code220 = 220,
-
-    /// <domain> Service closing transmission channel
-    Code221 = 221,
-
-    /// <domain> Service not available, closing transmission channel
-    /// (This may be a reply to any command if the service knows it must
-    /// shut down)
-    Code421 = 421,
-
-    /// Requested mail action okay, completed
-    Code250 = 250,
-
-    /// User not local; will forward to <forward-path> (See Section 3.4 of [RFC 5321](https://datatracker.ietf.org/doc/html/rfc5321))
-    Code251 = 251,
-
-    /// Cannot VRFY user, but will accept message and attempt delivery
-    /// (See Section 3.5.3 of [RFC 5321](https://datatracker.ietf.org/doc/html/rfc5321))
-    Code252 = 252,
-
-    /// Server unable to accommodate parameters
-    Code455 = 455,
-
-    /// MAIL FROM/RCPT TO parameters not recognized or not implemented
-    Code555 = 555,
-
-    /// Requested mail action not taken: mailbox unavailable (e.g.,
-    /// mailbox busy or temporarily blocked for policy reasons)
-    Code450 = 450,
-
-    /// Requested action not taken: mailbox unavailable (e.g., mailbox
-    /// not found, no access, or command rejected for policy reasons)
-    Code550 = 550,
-
-    /// Requested action aborted: error in processing
-    Code451 = 451,
-
-    /// User not local; please try <forward-path> (See Section 3.4 of [RFC 5321](https://datatracker.ietf.org/doc/html/rfc5321))
-    Code551 = 551,
-
-    /// Requested action not taken: insufficient system storage
-    Code452 = 452,
-
-    /// Requested mail action aborted: exceeded storage allocation
-    Code552 = 552,
-
-    /// Requested action not taken: mailbox name not allowed (e.g.,
-    /// mailbox syntax incorrect)
-    Code553 = 553,
-
-    /// Start mail input; end with <CRLF>.<CRLF>
-    Code354 = 354,
-
-    /// Transaction failed (Or, in the case of a connection-opening
-    /// response, "No SMTP service here")
-    Code554 = 554,
+    /// Indicates permanent failure (i.e. the client should not reattempt the request)
+    FiveHundredCode(u16),
 }
 
-impl TryFrom<usize> for SMTPReplyCode {
+impl TryFrom<u16> for SMTPReplyCode {
     type Error = SMTPReplyParseError;
 
-    fn try_from(value: usize) -> Result<Self, Self::Error> {
-        todo!()
+    fn try_from(value: u16) -> Result<Self, Self::Error> {
+        use SMTPReplyCode::*;
+
+        match value / 100 {
+            2 => Ok(TwoHundredCode(value - 200)),
+            3 => Ok(ThreeHundredCode(value - 300)),
+            4 => Ok(FourHundredCode(value - 400)),
+            5 => Ok(FiveHundredCode(value - 500)),
+            _ => Err(SMTPReplyParseError::InvalidResponseCode(value.into())),
+        }
     }
 }
 
@@ -197,11 +135,42 @@ impl TryFrom<&str> for SMTPReplyCode {
     type Error = SMTPReplyParseError;
 
     fn try_from(value: &str) -> Result<Self, Self::Error> {
-        let c = match value.parse::<usize>() {
+        let c = match value.parse::<u16>() {
             Ok(c) => c,
             Err(_) => return Err(SMTPReplyParseError::InvalidSyntax),
         };
 
         Self::try_from(c)
     }
+}
+
+#[test]
+fn u16_to_smtp_reply_code() {
+    let tests: Vec<(u16, Result<SMTPReplyCode, SMTPReplyParseError>)> = vec![
+        (200, Ok(SMTPReplyCode::TwoHundredCode(0))),
+        (300, Ok(SMTPReplyCode::ThreeHundredCode(0))),
+        (400, Ok(SMTPReplyCode::FourHundredCode(0))),
+        (500, Ok(SMTPReplyCode::FiveHundredCode(0))),
+        (220, Ok(SMTPReplyCode::TwoHundredCode(20))),
+        (354, Ok(SMTPReplyCode::ThreeHundredCode(54))),
+        (504, Ok(SMTPReplyCode::FiveHundredCode(4))),
+        (4, Err(SMTPReplyParseError::InvalidResponseCode(4))),
+        (0, Err(SMTPReplyParseError::InvalidResponseCode(0))),
+        (31, Err(SMTPReplyParseError::InvalidResponseCode(31))),
+        (123, Err(SMTPReplyParseError::InvalidResponseCode(123))),
+        (680, Err(SMTPReplyParseError::InvalidResponseCode(680))),
+    ];
+
+    for test in tests {
+        assert_eq!(test.0.try_into(), test.1);
+    }
+}
+
+#[test]
+fn str_to_smtp_reply_code() {
+    todo!()
+}
+
+fn parse_smtp_reply() {
+    todo!()
 }
