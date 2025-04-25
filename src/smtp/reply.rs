@@ -1,6 +1,7 @@
 use crate::smtp::{reply, SMTPReplyParseError};
 
 /// Represents an SMTP reply. See Section 4.2 of [RFC 5321](https://datatracker.ietf.org/doc/html/rfc5321#section-4.2)
+#[derive(PartialEq, Debug)]
 pub struct SMTPReply {
     /// The three digit numeric code
     code: SMTPReplyCode,
@@ -35,7 +36,7 @@ impl TryFrom<&str> for SMTPReply {
 
         let mut number_of_lines_parsed = 0;
 
-        let lines: Vec<&str> = s.split("\r\n").collect();
+        let lines: Vec<&str> = s.trim_end().split("\r\n").collect();
         for line in lines.iter() {
             number_of_lines_parsed += 1;
 
@@ -82,7 +83,7 @@ impl TryFrom<&str> for SMTPReply {
 
         Ok(Self {
             code: reply_code.unwrap(), // TODO: Eliminate this unwrap
-            text: reply_text,
+            text: reply_text.trim_end().to_owned(),
         })
     }
 }
@@ -135,7 +136,7 @@ impl TryFrom<&str> for SMTPReplyCode {
     type Error = SMTPReplyParseError;
 
     fn try_from(value: &str) -> Result<Self, Self::Error> {
-        let c = match value.parse::<u16>() {
+        let c = match value.trim().parse::<u16>() {
             Ok(c) => c,
             Err(_) => return Err(SMTPReplyParseError::InvalidSyntax),
         };
@@ -168,9 +169,50 @@ fn u16_to_smtp_reply_code() {
 
 #[test]
 fn str_to_smtp_reply_code() {
-    todo!()
+    let tests: Vec<(&str, Result<SMTPReplyCode, SMTPReplyParseError>)> = vec![
+        ("200", Ok(SMTPReplyCode::TwoHundredCode(0))),
+        ("300\r\n", Ok(SMTPReplyCode::ThreeHundredCode(0))),
+        ("400", Ok(SMTPReplyCode::FourHundredCode(0))),
+        ("500", Ok(SMTPReplyCode::FiveHundredCode(0))),
+        ("220", Ok(SMTPReplyCode::TwoHundredCode(20))),
+        (" 354", Ok(SMTPReplyCode::ThreeHundredCode(54))),
+        ("504", Ok(SMTPReplyCode::FiveHundredCode(4))),
+        ("4", Err(SMTPReplyParseError::InvalidResponseCode(4))),
+        ("0", Err(SMTPReplyParseError::InvalidResponseCode(0))),
+        ("31", Err(SMTPReplyParseError::InvalidResponseCode(31))),
+        ("123", Err(SMTPReplyParseError::InvalidResponseCode(123))),
+        ("680", Err(SMTPReplyParseError::InvalidResponseCode(680))),
+        ("abcdefghijklmnopqrstuv", Err(SMTPReplyParseError::InvalidSyntax)),
+        ("200-Word", Err(SMTPReplyParseError::InvalidSyntax)),
+        ("250 2.1.0", Err(SMTPReplyParseError::InvalidSyntax)),
+    ];
+
+    for test in tests {
+        assert_eq!(test.0.try_into(), test.1);
+    }
 }
 
+#[test]
 fn parse_smtp_reply() {
-    todo!()
+
+    let tests: Vec<(&str, Result<SMTPReply, SMTPReplyParseError>)> = vec![
+        ("", Err(SMTPReplyParseError::InvalidSyntax)),
+
+        // ("""
+        // """) // TODO: MORE TESTS
+    ];
+
+    for test in tests {
+        assert_eq!(test.0.try_into(), test.1);
+    }
+
+    let expected_reply = SMTPReply {
+        code: SMTPReplyCode::TwoHundredCode(20),
+        text: "smtp.example.com ESMTP Postfix".to_owned(),
+    };
+
+    assert_eq!(
+        "220 smtp.example.com ESMTP Postfix\r\n".try_into(),
+        Ok(expected_reply),
+    )
 }
