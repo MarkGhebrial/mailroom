@@ -13,9 +13,11 @@ Mailroom aims to be the simplest way to host a small number of email accounts on
    - Actions such as message deletion do not do anything, but user authentication with a simple password works.
    - Doesn't currently work with TLS or STARTTLS.
    - **Very** minimal; missing a lot of features
+   - TODO: Change implementation to use Strings instead of Bytes.
 - The configuration file
-   - Parsed with serde, then stored in a global static variable
+   - Parsed with serde, then stored in a global static variable.
 - Logging with Log4rs
+   - TODO: maybe switch to a simpler framework? Log4rs is very powerful but quite complex.
 
 ## What I'm working on:
 - SMTP support
@@ -25,6 +27,7 @@ Mailroom aims to be the simplest way to host a small number of email accounts on
    - Using [sea-orm](https://www.sea-ql.org/SeaORM/) as the ORM.
 
 ## What's missing / To do (in order of priority):
+- Change handwritten implementation of error types to macro driven implementations using `thiserror` crate.
 - TLS support
    - Automatically get certificates from Let's Encrypt?
 - DKIM support for signing outgoing emails.
@@ -67,7 +70,7 @@ Run `DATABASE_URL=sqlite://sqlite.db sea-orm-cli migrate refresh`
 
 Mailroom - A mail server written in Rust
 
-Copyright (C) 2023-2024 Mark Ghebrial
+Copyright (C) 2023-2025 Mark Ghebrial
 
 This program is free software: you can redistribute it and/or modify it under the terms of the GNU General Public License as published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version.
 
