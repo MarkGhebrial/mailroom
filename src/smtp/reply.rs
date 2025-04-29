@@ -182,8 +182,12 @@ fn str_to_smtp_reply_code() {
         ("31", Err(SMTPReplyParseError::InvalidResponseCode(31))),
         ("123", Err(SMTPReplyParseError::InvalidResponseCode(123))),
         ("680", Err(SMTPReplyParseError::InvalidResponseCode(680))),
-        ("abcdefghijklmnopqrstuv", Err(SMTPReplyParseError::InvalidSyntax)),
+        (
+            "abcdefghijklmnopqrstuvwxyz",
+            Err(SMTPReplyParseError::InvalidSyntax),
+        ),
         ("200-Word", Err(SMTPReplyParseError::InvalidSyntax)),
+        // Extended reply codes are not supported
         ("250 2.1.0", Err(SMTPReplyParseError::InvalidSyntax)),
     ];
 
@@ -194,10 +198,8 @@ fn str_to_smtp_reply_code() {
 
 #[test]
 fn parse_smtp_reply() {
-
     let tests: Vec<(&str, Result<SMTPReply, SMTPReplyParseError>)> = vec![
         ("", Err(SMTPReplyParseError::InvalidSyntax)),
-
         // ("""
         // """) // TODO: MORE TESTS
     ];

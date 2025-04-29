@@ -1,5 +1,6 @@
 mod config;
 mod config_helpers;
+mod connection_listener;
 mod database;
 mod imf;
 mod pop3;
@@ -11,6 +12,7 @@ use database::user_database::*;
 use lazy_static::lazy_static;
 use log::{info, warn};
 use pop3::POP3Connection;
+use smtp::IncomingSMTPConnection;
 use std::{
     env::{self, current_exe},
     fs,
@@ -63,7 +65,7 @@ async fn main() {
 
     let pop3_listener = TcpListener::bind("0.0.0.0:110").await.unwrap();
 
-    let handle = tokio::spawn(async move {
+    let pop3_handle = tokio::spawn(async move {
         loop {
             let (socket, addr) = pop3_listener.accept().await.unwrap();
 
@@ -80,5 +82,23 @@ async fn main() {
             });
         }
     });
-    handle.await.unwrap();
+
+    let smtp_listener = TcpListener::bind("0.0.0.0:666").await.unwrap();
+
+    let smtp_handle = tokio::spawn(async move {
+        loop {
+            let (socket, addr) = smtp_listener.accept().await.unwrap();
+
+            info!("Accepted SMTP connection from {}", addr);
+            let mut connection = IncomingSMTPConnection::new(socket);
+
+            tokio::spawn(async move {
+                connection.begin().await;
+            });
+        }
+    });
+
+    // Wait for the threads to finish
+    pop3_handle.await.unwrap();
+    smtp_handle.await.unwrap();
 }
