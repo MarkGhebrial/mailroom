@@ -1,6 +1,6 @@
 mod config;
 mod config_helpers;
-mod connection_listener;
+mod connection_handler;
 mod database;
 mod imf;
 mod pop3;
@@ -8,6 +8,7 @@ mod smtp;
 
 use crate::config::*;
 
+use connection_handler::ConnectionHandler;
 use database::user_database::*;
 use lazy_static::lazy_static;
 use log::{info, warn};
@@ -50,6 +51,34 @@ async fn main() {
 
     initialize_db().await.unwrap();
 
+    print_gmail_mx_record().await;
+
+    let pop3_handle = POP3Connection::start_listening(110).await;
+
+    let smtp_handle = IncomingSMTPConnection::start_listening(3309).await;
+
+    // let smtp_listener = TcpListener::bind("0.0.0.0:666").await.unwrap();
+
+    // let smtp_handle = tokio::spawn(async move {
+    //     loop {
+    //         let (socket, addr) = smtp_listener.accept().await.unwrap();
+
+    //         info!("Accepted SMTP connection from {}", addr);
+    //         let mut connection = IncomingSMTPConnection::new(socket);
+
+    //         tokio::spawn(async move {
+    //             connection.begin().await;
+    //         });
+    //     }
+    // });
+
+    // Wait for the threads to finish
+    pop3_handle.await.unwrap();
+    smtp_handle.await.unwrap();
+}
+
+/// This function serves no purpose. It will eventually be deleted.
+async fn print_gmail_mx_record() {
     let dns_resolver = TokioAsyncResolver::new(
         ResolverConfig::default(),
         ResolverOpts::default(),
@@ -62,43 +91,4 @@ async fn main() {
         warn!("{:?}", addr);
     }
     warn!("Done printing mx record");
-
-    let pop3_listener = TcpListener::bind("0.0.0.0:110").await.unwrap();
-
-    let pop3_handle = tokio::spawn(async move {
-        loop {
-            let (socket, addr) = pop3_listener.accept().await.unwrap();
-
-            info!("Accepted POP3 connection from {}", addr);
-            let mut connection = POP3Connection::new(socket);
-
-            // Handle the connection in a new async task
-            tokio::spawn(async move {
-                if let Err(e) = connection.begin().await {
-                    warn!("POP3 connection with {} ended with error: {}", addr, e)
-                } else {
-                    info!("POP3 connection with {} finished", addr);
-                }
-            });
-        }
-    });
-
-    let smtp_listener = TcpListener::bind("0.0.0.0:666").await.unwrap();
-
-    let smtp_handle = tokio::spawn(async move {
-        loop {
-            let (socket, addr) = smtp_listener.accept().await.unwrap();
-
-            info!("Accepted SMTP connection from {}", addr);
-            let mut connection = IncomingSMTPConnection::new(socket);
-
-            tokio::spawn(async move {
-                connection.begin().await;
-            });
-        }
-    });
-
-    // Wait for the threads to finish
-    pop3_handle.await.unwrap();
-    smtp_handle.await.unwrap();
 }

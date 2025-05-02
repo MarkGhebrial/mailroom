@@ -4,7 +4,11 @@ use std::future::Future;
 use tokio::net::{TcpListener, TcpStream};
 use tokio::task::JoinHandle;
 
-pub trait ConnectionHandler {
+/// A trait for structs that handle incoming TCP connections.
+pub trait ConnectionHandler
+where
+    Self: Send + Sized + 'static, // These bounds are required for the `bind` function
+{
     /// Return the name of the protocol this handler implements. Used for
     /// logging messages about connection status.
     ///
@@ -17,11 +21,11 @@ pub trait ConnectionHandler {
     ///
     /// Returns a handle to the listener thread. The handle only joins when the
     /// connection listener encounters a fatal error.
-    async fn bind(port: u16) -> JoinHandle<()>
-    where
-        Self: ConnectionHandler + Send + Sized + 'static,
+    /// 
+    /// TODO: Think of a more descriptive function name?
+    async fn start_listening(port: u16) -> JoinHandle<()>
     {
-        // TODO: Evaluate the unwraps in this function. Are the errors worth crashing the whole server?
+        // TODO: Consider not using `unwrap()`. Are the errors worth crashing the whole server?
         let listener = TcpListener::bind(("0.0.0.0", port)).await.unwrap();
 
         let handle = tokio::spawn(async move {
@@ -39,7 +43,7 @@ pub trait ConnectionHandler {
                     match connection.begin().await {
                         Ok(()) => {}
                         Err(e) => warn!(
-                            "{} Connection closed with error: {}",
+                            "{} connection closed with error: {}",
                             Self::protocol_name(),
                             e
                         ),
@@ -58,5 +62,5 @@ pub trait ConnectionHandler {
     /// Async function. Begin the transaction with the client.
     ///
     /// The return type is ugly because the
-    fn begin(&mut self) -> impl Future<Output = Result<(), impl Error>> + Send;
+    fn begin(&mut self) -> impl Future<Output = Result<(), Box<dyn Error>>> + Send;
 }

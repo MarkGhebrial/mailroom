@@ -11,8 +11,11 @@ use log::trace;
 use tokio::io::{self, AsyncReadExt, AsyncWriteExt};
 use tokio::net::TcpStream;
 
+use crate::connection_handler::ConnectionHandler;
 use crate::pop3::{err::POP3CommandErr, POP3Command, POP3Response};
 use POP3Command::*;
+
+// use std::future::Future;
 
 use crate::database::*;
 
@@ -24,6 +27,35 @@ pub struct POP3Connection {
     // Connection state
     username: Option<EmailAddress>,
     user: Option<user::Model>,
+}
+
+impl ConnectionHandler for POP3Connection {
+    fn protocol_name() -> String {
+        "POP3".to_owned()
+    }
+
+    fn from_stream(socket: TcpStream) -> Self {
+        Self {
+            stream: socket,
+            buffer: BytesMut::new(),
+            username: None,
+            user: None,
+        }
+    }
+
+    async fn begin(&mut self) -> Result<(), Box<dyn Error>> {
+        let authenticated: bool = self.authenticate().await?;
+        if !authenticated {
+            trace!("POP3 connection failed to authenticate");
+            return Ok(());
+        }
+        trace!("POP3 connection authenticated");
+
+        self.transaction().await?;
+        trace!("POP3 connection finished");
+
+        Ok(())
+    }
 }
 
 impl POP3Connection {
@@ -87,7 +119,10 @@ impl POP3Connection {
         }
     }
 
-    // TODO: return authenticated user information
+    /// Authentication phase of the POP3 connection. During this phase, the
+    /// server verifies the identity of the client.
+    ///
+    /// TODO: return authenticated user information
     pub async fn authenticate(&mut self) -> Result<bool, Box<dyn Error>> {
         // Greet the client
         self.send_response(POP3Response::positive("hello")).await?;

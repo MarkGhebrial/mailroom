@@ -4,6 +4,7 @@ use std::str::FromStr;
 use email_address::EmailAddress;
 use sea_orm::strum::Display;
 
+#[derive(PartialEq, Debug)]
 pub enum SMTPCommand {
     // TODO: source routes
     /// `MAIL FROM:`; Initiate transaction and specify the address of the
