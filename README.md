@@ -1,10 +1,10 @@
 # mailroom
 
-An email server written in pure Rust.
-
-This is very much a work in progress and is nowhere near completion.
+Self hosted email for the masses.
 
 Mailroom aims to be the simplest way to host a small number of email accounts on a home server. It's not intended to be an enterprise-grade email solution. Everything should be self contained and simple, and setup should take less than 30 minutes.
+
+Mailroom is a work in progress and is nowhere near production readiness.
 
 ## What works (not necessarily stable or complete!):
 - POP3
@@ -26,12 +26,16 @@ Mailroom aims to be the simplest way to host a small number of email accounts on
    - Switching to SQLite from Postgres for ease of use.
    - Using [sea-orm](https://www.sea-ql.org/SeaORM/) as the ORM.
 
-## What's missing / To do (in order of priority):
+## What's missing / To do:
 - Change handwritten implementation of error types to macro driven implementations using `thiserror` crate.
 - TLS support
-   - Automatically get certificates from Let's Encrypt?
+   - Automatically get certificates from Let's Encrypt
+   - How to handle conflicts on port 80?
+   - Should STARTTLS be supported? Probably.
 - DKIM support for signing outgoing emails.
-- Automatic SPF record generation?
+- TUI for editing configuration.
+- Automatic DNS record generation (DKIM, SPF, etc.)
+   - Is there a way to automatically set DNS records? Are proprietary APIs provided by domain registrars the only way?
 - IMAP support
 - Verification of incoming emails via DKIM and SPF.
 
@@ -57,6 +61,8 @@ Mailroom aims to be the simplest way to host a small number of email accounts on
 # Setup
 
 (optional) Set an environment variable called `CONFIG_PATH` to the path of `config.toml`.
+
+In bash: `export CONFIG_PATH=/path/to/config.toml`
 
 ## Migration
 
