@@ -19,7 +19,6 @@ use std::{
     fs,
     path::Path,
 };
-use tokio::net::TcpListener;
 
 use trust_dns_resolver::config::*;
 use trust_dns_resolver::{TokioAsyncResolver, TokioHandle};

@@ -59,30 +59,6 @@ impl ConnectionHandler for POP3Connection {
 }
 
 impl POP3Connection {
-    pub fn new(socket: TcpStream) -> Self {
-        Self {
-            stream: socket,
-            buffer: BytesMut::new(),
-            username: None,
-            user: None,
-        }
-    }
-
-    /// Commence the interaction with the client.
-    pub async fn begin(&mut self) -> Result<(), Box<dyn Error>> {
-        let authenticated: bool = self.authenticate().await?;
-        if !authenticated {
-            trace!("POP3 connection failed to authenticate");
-            return Ok(());
-        }
-        trace!("POP3 connection authenticated");
-
-        self.transaction().await?;
-        trace!("POP3 connection finished");
-
-        Ok(())
-    }
-
     /// Send a response or greeting to the client
     pub async fn send_response(&mut self, response: POP3Response) -> Result<(), io::Error> {
         let bytes = &Bytes::from(response)[..];

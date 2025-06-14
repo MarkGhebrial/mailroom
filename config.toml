@@ -2,6 +2,8 @@
 # to use same directory as the executable.
 log_4rs_config = "log4rs.yaml"
 
+bind_address = "0.0.0.0"
+
 [database]
 url = "sqlite:./sqlite.db?mode=rwc"
 

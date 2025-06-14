@@ -56,11 +56,11 @@ impl IncomingSMTPConnection {
                 Ok(command) => {
                     self.buffer.clear();
                     return Ok(command);
-                },
+                }
                 Err(SMTPCommandParseError::IncompleteCommand) => {
                     continue;
                 }
-                Err(e) => println!("SMTP command parse error: {:?}", e)
+                Err(e) => println!("SMTP command parse error: {:?}", e),
             }
         }
 

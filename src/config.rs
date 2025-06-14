@@ -1,11 +1,14 @@
 use serde::Deserialize;
 use std::default::Default;
 use std::env::current_exe;
+use std::net::Ipv4Addr;
 
 #[derive(Deserialize)]
 pub struct Config {
     #[serde(default = "default_log_4rs_config")]
     pub log_4rs_config: String,
+    // #[serde(default = "0.0.0.0")]
+    pub bind_address: Ipv4Addr,
     pub database: DatabaseCfg,
     pub domains: Vec<DomainCfg>,
 }
