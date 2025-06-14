@@ -48,6 +48,11 @@ async fn main() {
     log4rs::init_file(Path::new(&CONFIG.log_4rs_config), Default::default())
         .expect("Couldn't find/load Log4rs configuration file");
 
+    if sudo::with_env(&["CONFIG_PATH"]).is_err() {
+        println!("Couldn't escalate privileges. Exiting.");
+        return
+    }
+
     initialize_db().await.unwrap();
 
     print_gmail_mx_record().await;

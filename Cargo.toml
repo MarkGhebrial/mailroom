@@ -15,7 +15,7 @@ bytes = "1"
 email_address = "0.2.3"
 argon2 = "0.4.1"
 rand_core = { version = "0.6", features = ["std"] } # For salt generation
-sea-orm = { version = "0.11.0", features = [ "sqlx-sqlite", "runtime-tokio-native-tls", "macros" ] }
+sea-orm = { version = "0.11.0", features = [ "sqlx-sqlite", "runtime-tokio-rustls", "macros" ] }
 tokio-postgres = "0.7.7"
 trust-dns-resolver = { version = "0.22.0", features = [ "tokio-runtime" ] }
 lazy_static = "1.4.0"
@@ -23,3 +23,4 @@ log4rs = "1.1.1"
 log = "0.4.17"
 nom = "8.0.0" 
 abnf-core = "0.6.0"
+sudo = "0.6.0"
