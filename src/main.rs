@@ -1,3 +1,4 @@
+mod cli;
 mod config;
 mod config_helpers;
 mod connection_handler;
@@ -6,13 +7,21 @@ mod imf;
 mod pop3;
 mod smtp;
 
-use crate::config::*;
+use cli::*;
+use config::*;
 
 use connection_handler::ConnectionHandler;
+use crossterm::event::{self, Event, KeyCode, KeyEvent};
 use database::user_database::*;
 use lazy_static::lazy_static;
-use log::{info, warn};
+use log::warn;
 use pop3::POP3Connection;
+use ratatui::{
+    layout::{Constraint, Layout},
+    style::Stylize,
+    text::Text,
+    widgets::{Block, BorderType, Paragraph, Widget, Wrap},
+};
 use smtp::IncomingSMTPConnection;
 use std::{
     env::{self, current_exe},
@@ -45,12 +54,30 @@ lazy_static! {
 
 #[tokio::main]
 async fn main() {
+    // Use clap to parse the command line arguments
+    let matches = cli().get_matches();
+
+    // Run different functions based on the subcommand
+    match matches.subcommand() {
+        // No subcommand provided, so start the server
+        None => run().await,
+        Some(s) => match s {
+            ("config", _args) => run_config_editor(),
+            (s, _args) => panic!("Subcommand {} not recognized", s),
+        },
+    }
+}
+
+/// Run the server. This function is executed when no command line arguments are provided.
+async fn run() {
+    // TODO: Handle the case where another instance of mailroom is already running
+
     log4rs::init_file(Path::new(&CONFIG.log_4rs_config), Default::default())
         .expect("Couldn't find/load Log4rs configuration file");
 
     if sudo::with_env(&["CONFIG_PATH"]).is_err() {
         println!("Couldn't escalate privileges. Exiting.");
-        return
+        return;
     }
 
     initialize_db().await.unwrap();
@@ -61,24 +88,53 @@ async fn main() {
 
     let smtp_handle = IncomingSMTPConnection::start_listening(3309).await;
 
-    // let smtp_listener = TcpListener::bind("0.0.0.0:666").await.unwrap();
-
-    // let smtp_handle = tokio::spawn(async move {
-    //     loop {
-    //         let (socket, addr) = smtp_listener.accept().await.unwrap();
-
-    //         info!("Accepted SMTP connection from {}", addr);
-    //         let mut connection = IncomingSMTPConnection::new(socket);
-
-    //         tokio::spawn(async move {
-    //             connection.begin().await;
-    //         });
-    //     }
-    // });
-
     // Wait for the threads to finish
     pop3_handle.await.unwrap();
     smtp_handle.await.unwrap();
+}
+
+/// Run the configuration editor. This function runs when the "config" subcommand is provided.
+///
+/// The config editor will be a TUI application made with ratatui.
+fn run_config_editor() {
+    let mut terminal = ratatui::init();
+    loop {
+        terminal.draw(|frame| {
+            let vertical = Layout::vertical([Constraint::Fill(1), Constraint::Length(1)]);
+            let [main_area, footer] = vertical.areas(frame.area());
+
+            // Draw the footer
+            Text::raw("Press q to quit; arrow keys to navigate; space or enter to select").on_white().render(footer, frame.buffer_mut());
+
+            let horizontal = Layout::horizontal([Constraint::Length(25), Constraint::Fill(1)]);
+            let [left_area, right_area] = horizontal.areas(main_area);
+
+            let info = Paragraph::new("This is the configuration editor for mailroom. You can also change mailroom's configuration by directly editing config.toml.");
+
+            let block = Block::bordered().border_type(BorderType::Thick);
+
+            frame.render_widget(block, right_area);
+            frame.render_widget(info, left_area);
+        }).expect("failed to draw frame");
+
+        // Handle terminal events
+        match event::read().expect("failed to read terminal event") {
+            Event::Key(key_event) => {
+                match key_event.code {
+                    KeyCode::Char('q') => {
+                        // TODO: Save the configuration
+                        // Exit the application
+                        break;
+                    }
+                    _ => {}
+                }
+            }
+            _ => {}
+        }
+    }
+
+    // Restore the terminal to its original state
+    ratatui::restore();
 }
 
 /// This function serves no purpose. It will eventually be deleted.
