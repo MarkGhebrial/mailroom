@@ -1,5 +1,6 @@
 mod cli;
 mod config;
+mod config_editor;
 mod config_helpers;
 mod connection_handler;
 mod database;
@@ -10,26 +11,17 @@ mod smtp;
 use cli::*;
 use config::*;
 
-// use ratatui::style::Stylize;
-// use colored::Colorize;
 use crossterm::style::Stylize;
 
 use connection_handler::ConnectionHandler;
-use crossterm::event::{self, Event, KeyCode};
 use database::user_database::*;
 use lazy_static::lazy_static;
-use log::{debug, info, trace, warn};
+use log::{info, warn};
 use pop3::POP3Connection;
-use ratatui::{
-    layout::{Constraint, Layout},
-    text::Text,
-    widgets::{Block, BorderType, Paragraph, Widget},
-};
 use smtp::IncomingSMTPConnection;
 use std::{
     env::{self, current_exe},
     fs,
-    time::SystemTime,
 };
 
 use trust_dns_resolver::config::*;
@@ -65,7 +57,7 @@ async fn main() {
         // No subcommand provided, so start the server
         None => run().await,
         Some(s) => match s {
-            ("config", _args) => run_config_editor(),
+            ("config", _args) => config_editor::run_config_editor(),
             (s, _args) => panic!("Subcommand {} not recognized", s),
         },
     }
@@ -98,50 +90,6 @@ async fn run() {
     smtp_handle.await.unwrap();
 }
 
-/// Run the configuration editor. This function runs when the "config" subcommand is provided.
-///
-/// The config editor will be a TUI application made with ratatui.
-fn run_config_editor() {
-    let mut terminal = ratatui::init();
-    loop {
-        terminal.draw(|frame| {
-            let vertical = Layout::vertical([Constraint::Fill(1), Constraint::Length(1)]);
-            let [main_area, footer] = vertical.areas(frame.area());
-
-            // Draw the footer
-            Text::raw("Press q to quit; arrow keys to navigate; space or enter to select")/*.on_white()*/.render(footer, frame.buffer_mut());
-
-            let horizontal = Layout::horizontal([Constraint::Length(25), Constraint::Fill(1)]);
-            let [left_area, right_area] = horizontal.areas(main_area);
-
-            let info = Paragraph::new("This is the configuration editor for mailroom. You can also change mailroom's configuration by directly editing config.toml.");
-
-            let block = Block::bordered().border_type(BorderType::Thick);
-
-            frame.render_widget(block, right_area);
-            frame.render_widget(info, left_area);
-        }).expect("failed to draw frame");
-
-        // Handle terminal events
-        match event::read().expect("failed to read terminal event") {
-            Event::Key(key_event) => {
-                match key_event.code {
-                    KeyCode::Char('q') => {
-                        // TODO: Save the configuration
-                        // Exit the application
-                        break;
-                    }
-                    _ => {}
-                }
-            }
-            _ => {}
-        }
-    }
-
-    // Restore the terminal to its original state
-    ratatui::restore();
-}
-
 /// This function serves no purpose. It will eventually be deleted.
 async fn print_gmail_mx_record() {
     let dns_resolver = TokioAsyncResolver::new(
@@ -161,8 +109,6 @@ async fn print_gmail_mx_record() {
 fn init_logger() {
     fern::Dispatch::new()
         .format(|out, message, record| {
-            // let time = SystemTime::now();
-            // humantime::format_rfc3339_seconds(time)
             use log::Level;
 
             let date = chrono::Local::now();

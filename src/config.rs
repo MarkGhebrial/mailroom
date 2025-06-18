@@ -1,9 +1,9 @@
-use serde::Deserialize;
+use serde::{Deserialize, Serialize};
 use std::default::Default;
 use std::env::current_exe;
 use std::net::Ipv4Addr;
 
-#[derive(Deserialize)]
+#[derive(Deserialize, Serialize)]
 pub struct Config {
     #[serde(default = "default_log_4rs_config")]
     pub log_4rs_config: String,
@@ -21,10 +21,10 @@ fn default_log_4rs_config() -> String {
     dir.as_path().to_str().unwrap().to_owned()
 }
 
-#[derive(Deserialize)]
+// #[derive(Deserialize, Serialize)]
 pub struct PostgresCfg {
     /// PostgreSQL server hostname
-    #[serde(default = "default_postgres_host")]
+    // #[serde(default = "default_postgres_host")]
     pub hostname: String,
     /// PostgreSQL username
     pub user: String,
@@ -32,7 +32,7 @@ pub struct PostgresCfg {
     pub password: String,
 }
 
-#[derive(Deserialize)]
+#[derive(Deserialize, Serialize)]
 pub struct DatabaseCfg {
     /// Database URL
     pub url: String,
@@ -42,7 +42,7 @@ fn default_postgres_host() -> String {
     "localhost".into()
 }
 
-#[derive(Deserialize)]
+#[derive(Deserialize, Serialize)]
 pub struct DomainCfg {
     /// Domain name
     pub name: String,
@@ -50,7 +50,7 @@ pub struct DomainCfg {
     pub users: Vec<String>,
 }
 
-#[derive(Deserialize)]
+#[derive(Deserialize, Serialize)]
 pub enum TlsSettings {
     #[serde(rename = "disabled")]
     Disabled,
