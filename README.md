@@ -16,8 +16,8 @@ Mailroom is a work in progress and is nowhere near production readiness.
    - TODO: Change implementation to use Strings instead of Bytes.
 - The configuration file
    - Parsed with serde, then stored in a global static variable.
-- Logging with Log4rs
-   - TODO: maybe switch to a simpler framework? Log4rs is very powerful but quite complex.
+- Logging with [fern](https://docs.rs/fern/latest/fern/)
+   - fern is much simpler than log4rs, but that comes at the cost of less configurability. If more complex logging is needed, then I'll consider switching back to log4rs.
 
 ## What I'm working on:
 - SMTP support

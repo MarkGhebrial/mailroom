@@ -30,8 +30,8 @@ pub struct POP3Connection {
 }
 
 impl ConnectionHandler for POP3Connection {
-    fn protocol_name() -> String {
-        "POP3".to_owned()
+    fn protocol_name() -> &'static str {
+        "POP3"
     }
 
     fn from_stream(socket: TcpStream) -> Self {

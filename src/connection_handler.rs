@@ -15,7 +15,7 @@ where
     /// logging messages about connection status.
     ///
     /// Examples: "POP3", "SMTP", "IMAP", "HTTP", etc.
-    fn protocol_name() -> String;
+    fn protocol_name() -> &'static str;
 
     /// Bind to a port and start listening for connections. The default
     /// implementation handles each connection separately in its own tokio
@@ -43,8 +43,15 @@ where
                 let mut connection = Self::from_stream(socket);
 
                 tokio::spawn(async move {
+                    // Begin communication with the client
                     match connection.begin().await {
-                        Ok(()) => {}
+                        Ok(()) => {
+                            info!(
+                                "{} connection with {} finished successfully",
+                                Self::protocol_name(),
+                                addr
+                            )
+                        }
                         Err(e) => warn!(
                             "{} connection closed with error: {}",
                             Self::protocol_name(),

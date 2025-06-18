@@ -7,23 +7,26 @@ version = "0.1.0"
 edition = "2021"
 
 [dependencies]
-tokio = { version = "1", features = ["full"] }
-toml = "0.5.9"
-serde = "1.0.144"
+tokio = { version = "1", features = ["full"] } # Async framework
+toml = "0.5.9" # For parsing config.toml
+serde = "1.0.144" # Serialization and deserialization
 #tokio-native-tls = "0.3.0"
-bytes = "1"
-email_address = "0.2.3"
-argon2 = "0.4.1"
+bytes = "1" # Types for working with bytes
+email_address = "0.2.3" # RFC compliant email address type. TODO: Consider removing this dependency
+argon2 = "0.4.1" # Password hashing
 rand_core = { version = "0.6", features = ["std"] } # For salt generation
-sea-orm = { version = "0.11.0", features = [ "sqlx-sqlite", "runtime-tokio-rustls", "macros" ] }
-tokio-postgres = "0.7.7"
-trust-dns-resolver = { version = "0.22.0", features = [ "tokio-runtime" ] }
-lazy_static = "1.4.0"
-log4rs = "1.1.1"
-log = "0.4.17"
-nom = "8.0.0" 
-abnf-core = "0.6.0"
-sudo = "0.6.0"
-clap = "4.5.40"
-ratatui = "0.29.0"
-crossterm = "0.29.0"
+sea-orm = { version = "0.11.0", features = [ "sqlx-sqlite", "runtime-tokio-rustls", "macros" ] } # Object relational model
+trust-dns-resolver = { version = "0.22.0", features = [ "tokio-runtime" ] } # DNS query resolution
+lazy_static = "1.4.0" # Initialization of static variables
+# log4rs = "1.1.1"
+log = "0.4.17" # Logging macros
+fern = "0.7.1" # Logging framework
+nom = "8.0.0" # Parser combinators
+abnf-core = "0.6.0" # Nom parsers for Augmented Backus-Naur Form core rules (see RFC 5234) 
+sudo = "0.6.0" # Privilege execution so that mailroom can bind to ports lower than 1024
+clap = "4.5.40" # Command line argument parsing
+ratatui = "0.29.0" # TUI framework
+crossterm = "0.29.0" # Terminal events (key presses, mouse movement, etc.)
+# humantime = "2.2.0"
+colored = "3.0.0"
+chrono = "0.4.41"

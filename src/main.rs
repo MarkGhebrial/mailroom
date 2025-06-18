@@ -10,23 +10,26 @@ mod smtp;
 use cli::*;
 use config::*;
 
+// use ratatui::style::Stylize;
+// use colored::Colorize;
+use crossterm::style::Stylize;
+
 use connection_handler::ConnectionHandler;
-use crossterm::event::{self, Event, KeyCode, KeyEvent};
+use crossterm::event::{self, Event, KeyCode};
 use database::user_database::*;
 use lazy_static::lazy_static;
-use log::warn;
+use log::{debug, info, trace, warn};
 use pop3::POP3Connection;
 use ratatui::{
     layout::{Constraint, Layout},
-    style::Stylize,
     text::Text,
-    widgets::{Block, BorderType, Paragraph, Widget, Wrap},
+    widgets::{Block, BorderType, Paragraph, Widget},
 };
 use smtp::IncomingSMTPConnection;
 use std::{
     env::{self, current_exe},
     fs,
-    path::Path,
+    time::SystemTime,
 };
 
 use trust_dns_resolver::config::*;
@@ -72,8 +75,10 @@ async fn main() {
 async fn run() {
     // TODO: Handle the case where another instance of mailroom is already running
 
-    log4rs::init_file(Path::new(&CONFIG.log_4rs_config), Default::default())
-        .expect("Couldn't find/load Log4rs configuration file");
+    init_logger();
+
+    // log4rs::init_file(Path::new(&CONFIG.log_4rs_config), Default::default())
+    //     .expect("Couldn't find/load Log4rs configuration file");
 
     if sudo::with_env(&["CONFIG_PATH"]).is_err() {
         println!("Couldn't escalate privileges. Exiting.");
@@ -104,7 +109,7 @@ fn run_config_editor() {
             let [main_area, footer] = vertical.areas(frame.area());
 
             // Draw the footer
-            Text::raw("Press q to quit; arrow keys to navigate; space or enter to select").on_white().render(footer, frame.buffer_mut());
+            Text::raw("Press q to quit; arrow keys to navigate; space or enter to select")/*.on_white()*/.render(footer, frame.buffer_mut());
 
             let horizontal = Layout::horizontal([Constraint::Length(25), Constraint::Fill(1)]);
             let [left_area, right_area] = horizontal.areas(main_area);
@@ -150,5 +155,39 @@ async fn print_gmail_mx_record() {
     for addr in response.iter() {
         warn!("{:?}", addr);
     }
-    warn!("Done printing mx record");
+    info!("Done printing mx record");
+}
+
+fn init_logger() {
+    fern::Dispatch::new()
+        .format(|out, message, record| {
+            // let time = SystemTime::now();
+            // humantime::format_rfc3339_seconds(time)
+            use log::Level;
+
+            let date = chrono::Local::now();
+
+            let level = match record.level() {
+                Level::Error => "ERROR".red(),
+                Level::Warn => "WARN".yellow(),
+                Level::Info => "INFO".green(),
+                Level::Debug => "DEBUG".magenta(),
+                Level::Trace => "TRACE".grey(),
+            };
+
+            out.finish(format_args!(
+                "{} {} {}\n{}\n",
+                date.format("%m/%d/%Y %H:%M:%S").to_string().blue(),
+                level,
+                record.target().italic(),
+                message.to_string().trim()
+            ))
+        })
+        .level(log::LevelFilter::Info) // Set log level for dependencies
+        .level_for("mailroom", log::LevelFilter::Trace) // Set log level for the application
+        .chain(std::io::stdout())
+        // TODO: All the terminal control characters for coloring and formatting text are written to the log file. Fix that
+        .chain(fern::log_file("output.log").unwrap())
+        .apply()
+        .expect("failed to set up logger");
 }

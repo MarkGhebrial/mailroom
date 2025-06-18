@@ -16,8 +16,8 @@ pub struct IncomingSMTPConnection {
 }
 
 impl ConnectionHandler for IncomingSMTPConnection {
-    fn protocol_name() -> String {
-        "SMTP".to_owned()
+    fn protocol_name() -> &'static str {
+        "SMTP"
     }
 
     fn from_stream(stream: TcpStream) -> Self {

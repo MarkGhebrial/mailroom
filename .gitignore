@@ -1,6 +1,9 @@
+# build artifacts
 /target
 
-# Log4rs output
+# logging output
 /log
+output.log
 
+# database
 sqlite.db
