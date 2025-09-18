@@ -16,12 +16,13 @@ use crossterm::style::Stylize;
 use connection_handler::ConnectionHandler;
 use database::user_database::*;
 use lazy_static::lazy_static;
-use log::{info, warn};
+use log::{error, info, warn};
 use pop3::POP3Connection;
 use smtp::IncomingSMTPConnection;
 use std::{
     env::{self, current_exe},
     fs,
+    process::exit,
 };
 
 use trust_dns_resolver::config::*;
@@ -40,10 +41,27 @@ lazy_static! {
             }
         };
 
-        toml::from_str(
-            fs::read_to_string(&config_path)
-            .expect(&format!("Couldn't find config file at {}", &config_path)).as_str()
-        ).expect("Invalid configuration")
+        // Read the config file from disk
+        let config_string = fs::read_to_string(&config_path).unwrap_or_else(|_err| {
+            match env::var("CONFIG_PATH") {
+                Ok(_) => error!("Couldn't find config file at {}", &config_path),
+                Err(_) => error!("Couldn't find config file at {}\nYou can set the location of the config file by setting the CONFIG_PATH environment variable", &config_path),
+            }
+            // error!("Couldn't find config file at {}\n", &config_path);
+            exit(-1);
+        });
+
+        // Parse the config file
+        let config = toml::from_str(
+            &config_string
+        ).unwrap_or_else(|_err| {
+            error!("Invalid configuration");
+            exit(-1)
+        });
+
+        log::info!("Configuration loaded sucessfully.");
+
+        config
     };
 }
 
@@ -69,11 +87,8 @@ async fn run() {
 
     init_logger();
 
-    // log4rs::init_file(Path::new(&CONFIG.log_4rs_config), Default::default())
-    //     .expect("Couldn't find/load Log4rs configuration file");
-
     if sudo::with_env(&["CONFIG_PATH"]).is_err() {
-        println!("Couldn't escalate privileges. Exiting.");
+        error!("Couldn't escalate privileges. Exiting.");
         return;
     }
 
