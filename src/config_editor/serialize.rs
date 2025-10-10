@@ -1,5 +1,5 @@
 //! This file was an experiment. A failed one? Probably.
-//! 
+//!
 //! It's a candidate for deletion.
 
 use std::{error::Error, fmt::Display};

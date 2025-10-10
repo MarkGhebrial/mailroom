@@ -1,4 +1,3 @@
-use bytes::BytesMut;
 use tokio::io::{self, AsyncWriteExt};
 use tokio::{io::AsyncReadExt, net::TcpStream};
 
@@ -37,13 +36,6 @@ impl ConnectionHandler for IncomingSMTPConnection {
 }
 
 impl IncomingSMTPConnection {
-    pub fn new(stream: TcpStream) -> Self {
-        Self {
-            stream,
-            buffer: String::new(),
-        }
-    }
-
     pub async fn read_command(&mut self) -> Result<SMTPCommand, io::Error> {
         loop {
             if self.stream.read_to_string(&mut self.buffer).await? == 0 {

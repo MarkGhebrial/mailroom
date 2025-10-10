@@ -42,6 +42,7 @@ where
                 );
                 let mut connection = Self::from_stream(socket);
 
+                // Spawn a new thread to handle the connection so the listener thread doesn't block
                 tokio::spawn(async move {
                     // Begin communication with the client
                     match connection.begin().await {

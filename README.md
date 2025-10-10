@@ -57,6 +57,7 @@ Mailroom is a work in progress and is nowhere near production readiness.
    - Instructs other domains how to deal with emails that fail DKIM and SPF.
    - https://www.cloudflare.com/learning/dns/dns-records/dns-dmarc-record/
    - https://datatracker.ietf.org/doc/html/rfc7489
+- Useful article on ensuring mail deliverability: https://senders.yahooinc.com/best-practices/
 
 # Setup
 
