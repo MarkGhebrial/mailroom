@@ -1,5 +1,11 @@
+//! # Config Editor
+//! 
+//! This module contains the code for mailroom's configuration editor TUI. It is
+//! unfinished.
+
 mod serialize;
 mod tree;
+
 
 use crossterm::event::{self, Event, KeyCode};
 // use log::{debug, info, trace, warn};

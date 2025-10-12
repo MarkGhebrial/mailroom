@@ -58,6 +58,7 @@ Mailroom is a work in progress and is nowhere near production readiness.
    - https://www.cloudflare.com/learning/dns/dns-records/dns-dmarc-record/
    - https://datatracker.ietf.org/doc/html/rfc7489
 - Useful article on ensuring mail deliverability: https://senders.yahooinc.com/best-practices/
+- [Stalwart](https://stalw.art) has already published a mail authentication crate: https://github.com/stalwartlabs/mail-auth. It might be worth using it to avoid reinventing the wheel.
 
 # Setup
 

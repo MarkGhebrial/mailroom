@@ -1,63 +1,78 @@
-use std::rc::Rc;
+use std::{
+    cell::RefCell,
+    fmt::Display,
+    rc::Rc,
+    sync::atomic::{AtomicUsize, Ordering},
+};
 
 use ratatui::{
     style::{Style, Stylize},
     widgets::{Block, List, Widget},
 };
 
-pub trait Node {
-    fn parent(&self) -> &Option<Rc<dyn Node>>;
-    fn children(&self) -> &Vec<Rc<dyn Node>>;
-    fn name(&self) -> &str;
+#[derive(Debug)]
+struct Node<T> {
+    pub data: T,
+    pub children: Vec<Rc<RefCell<Node<T>>>>,
 }
 
-pub struct SimpleNode {
-    parent: Option<Rc<dyn Node>>,
-    children: Vec<Rc<dyn Node>>,
-    name: String,
-}
-
-impl SimpleNode {
-    fn new(parent: Option<Rc<dyn Node>>, name: String) -> Self {
-        Self {
-            parent,
-            children: Vec::new(),
-            name,
+impl<T> Node<T> {
+    fn new(data: T) -> Node<T> {
+        Node {
+            data: data,
+            children: vec![],
         }
     }
 
-    fn child(mut self, child: Rc<dyn Node>) -> Self {
-        self.children.push(child);
+    fn add_child(&mut self, child: Node<T>) {
+        self.children.push(Rc::new(RefCell::new(child)));
+    }
+
+    fn child(mut self, child: Node<T>) -> Self {
+        self.children.push(Rc::new(RefCell::new(child)));
         self
     }
 }
 
-impl Node for SimpleNode {
-    fn parent(&self) -> &Option<Rc<dyn Node>> {
-        &self.parent
-    }
-
-    fn children(&self) -> &Vec<Rc<dyn Node>> {
-        &self.children
-    }
-
-    fn name(&self) -> &str {
-        &self.name
-    }
+struct TreeWalker<'a, T> {
+    parent_node: &'a Node<T>,
+    index_of_child: usize,
 }
 
-impl Widget for &SimpleNode {
-    fn render(self, area: ratatui::prelude::Rect, buf: &mut ratatui::prelude::Buffer)
-    where
-        Self: Sized,
-    {
-        // let items = ["Item 1", "Item 2", "Item 3"];
-        let list = List::new(self.children().iter().map(|c| c.name()))
-            .block(Block::bordered().title(self.name()))
-            .highlight_style(Style::new().reversed())
-            .highlight_symbol(">>")
-            .repeat_highlight_symbol(true);
+#[test]
+fn test_tree() {
+    let root: Node<String> = Node::new("Root node.".to_string()).child(
+        Node::new("Child 1 of root".to_string())
+            .child(Node::new("Child 1 of child 1".to_string()))
+            .child(
+                Node::new("Child 2 of child 1".to_string())
+                    .child(Node::new("Modify me, please".to_string())),
+            ),
+    ).child(Node::new("fdsfsafds".to_string()));
 
-        list.render(area, buf);
+    // let mut branch1 = Node::new("Child of root 1".to_string());
+    // branch1.add_child(Node::new("Leaf 1".to_string()));
+    // root.add_child(branch1);
+
+    // root.add_child(Node::new("Leaf 2".to_string()));
+
+    print_tree(&root);
+}
+
+fn print_tree<T>(node: &Node<T>)
+where
+    T: Display,
+{
+    static INDENT_LEVEL: AtomicUsize = AtomicUsize::new(0);
+
+    for _ in 0..INDENT_LEVEL.load(Ordering::Relaxed) {
+        print!("  ");
+    }
+    println!("{}", node.data);
+
+    for node in node.children.iter() {
+        INDENT_LEVEL.fetch_add(1, Ordering::Relaxed);
+        print_tree(&(*node).borrow());
+        INDENT_LEVEL.fetch_sub(1, Ordering::Relaxed);
     }
 }
