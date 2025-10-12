@@ -21,10 +21,13 @@ Mailroom is a work in progress and is nowhere near production readiness.
 
 ## What I'm working on:
 - SMTP support
-   - This is kinda important if mailroom is actually supposed to work as an email server lol.
+   - This is kinda important if mailroom is actually supposed to work as an email server.
+   - Current development stage: SMTP command/response parsing/generation.
 - A database to store user information and emails
-   - Switching to SQLite from Postgres for ease of use.
+   - Using SQLite as the default database. Support for Postgres and MySQL is planned.
    - Using [sea-orm](https://www.sea-ql.org/SeaORM/) as the ORM.
+- A terminal based configuration editor.
+   - Much lighter weight than a web based editor, but still provides config validation.
 
 ## What's missing / To do:
 - Change handwritten implementation of error types to macro driven implementations using `thiserror` crate.
@@ -33,13 +36,26 @@ Mailroom is a work in progress and is nowhere near production readiness.
    - How to handle conflicts on port 80?
    - Should STARTTLS be supported? Probably.
 - DKIM support for signing outgoing emails.
-- TUI for editing configuration.
 - Automatic DNS record generation (DKIM, SPF, etc.)
    - Is there a way to automatically set DNS records? Are proprietary APIs provided by domain registrars the only way?
+     - Answer: [Yes](https://datatracker.ietf.org/doc/html/rfc2136), there's a 
+       standard for updating DNS records, but vendor specific APIs are still the 
+       primary method. 
 - IMAP support
 - Verification of incoming emails via DKIM and SPF.
 
 ## Notes for my future self
+- Mail Submission
+   - Typically happens on a different port to mail transfer. Submission: port 587. Transfer: port 25.
+   - See [RFC 6409](https://datatracker.ietf.org/doc/html/rfc6409) for an overview of mail submission.
+     [RFC 4954](https://datatracker.ietf.org/doc/html/rfc4954) specifies SMTP authentication.
+   - SMTP authentication summary:
+      - SMTP authentication is an SMTP service extension with EHLO keyword "AUTH"
+      - The command to initiate authentication is "AUTH". There are two arguments:
+         1. `mechanism` is a string that specifies the SASL mechanism to use.
+         2. `initial-response` is optional.
+      - Uses [SASL](https://datatracker.ietf.org/doc/html/rfc4422) under the hood.
+         - Consider https://crates.io/crates/rsasl
 - DKIM
    - Verifies the authenticity of incoming emails with a hash and digital signature.
    - Mailroom should generate a DKIM signature for outgoing emails and verify the signatures of incoming ones.
@@ -71,6 +87,8 @@ In bash: `export CONFIG_PATH=/path/to/config.toml`
 Run `DATABASE_URL=sqlite://sqlite.db sea-orm-cli migrate refresh`
 
 ## Generate models
+
+Do this after editing the migrations.
 
 `sea-orm-cli generate entity -u sqlite://sqlite.db -o src/database/models`
 
